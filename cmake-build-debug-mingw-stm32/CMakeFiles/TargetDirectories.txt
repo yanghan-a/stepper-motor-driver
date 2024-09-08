@@ -1,0 +1,3 @@
+D:/Place_for_file/CLion/STM32F1/STM32F03CBT6/cmake-build-debug-mingw-stm32/CMakeFiles/STM32F03CBT6.elf.dir
+D:/Place_for_file/CLion/STM32F1/STM32F03CBT6/cmake-build-debug-mingw-stm32/CMakeFiles/edit_cache.dir
+D:/Place_for_file/CLion/STM32F1/STM32F03CBT6/cmake-build-debug-mingw-stm32/CMakeFiles/rebuild_cache.dir

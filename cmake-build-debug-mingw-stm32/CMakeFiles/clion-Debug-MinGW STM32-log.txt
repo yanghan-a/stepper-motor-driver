@@ -1,0 +1,28 @@
+"D:\Place_for_installation\clion\CLion\CLion 2024.1.5\bin\cmake\win\x64\bin\cmake.exe" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=D:/MinGW/bin/mingw32-make.exe -DCMAKE_C_COMPILER=D:/Place_for_installation/gcc_arm_none_eabi/gcc-arm-none-eabi-9-2019-q4-major-win32/bin/arm-none-eabi-gcc.exe -DCMAKE_CXX_COMPILER=D:/Place_for_installation/gcc_arm_none_eabi/gcc-arm-none-eabi-9-2019-q4-major-win32/bin/arm-none-eabi-g++.exe -G "CodeBlocks - MinGW Makefiles" -S D:\Place_for_file\CLion\STM32F1\STM32F03CBT6 -B D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\cmake-build-debug-mingw-stm32
+CMake Deprecation Warning:
+  Support for "Extra Generators" like
+
+    CodeBlocks
+
+  is deprecated and will be removed from a future version of CMake.  IDEs may
+  use the cmake-file-api(7) to view CMake-generated project build trees.
+
+
+-- The C compiler identification is GNU 9.2.1
+-- The CXX compiler identification is GNU 9.2.1
+-- The ASM compiler identification is GNU
+-- Found assembler: D:/Place_for_installation/gcc_arm_none_eabi/gcc-arm-none-eabi-9-2019-q4-major-win32/bin/arm-none-eabi-gcc.exe
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: D:/Place_for_installation/gcc_arm_none_eabi/gcc-arm-none-eabi-9-2019-q4-major-win32/bin/arm-none-eabi-gcc.exe - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: D:/Place_for_installation/gcc_arm_none_eabi/gcc-arm-none-eabi-9-2019-q4-major-win32/bin/arm-none-eabi-g++.exe - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Minimal optimization, debug info included
+-- Configuring done (5.7s)
+-- Generating done (0.0s)
+-- Build files have been written to: D:/Place_for_file/CLion/STM32F1/STM32F03CBT6/cmake-build-debug-mingw-stm32
