@@ -39,6 +39,8 @@ CMakeFiles/STM32F03CBT6.elf.dir/Core/Src/usart.c.obj: \
  D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\STM32F1xx_HAL_Driver\Inc/stm32f1xx_hal_tim.h \
  D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\STM32F1xx_HAL_Driver\Inc/stm32f1xx_hal_tim_ex.h \
  D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\STM32F1xx_HAL_Driver\Inc/stm32f1xx_hal_uart.h \
+ D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\UserApp/common_inc.h \
+ d:\place_for_installation\gcc_arm_none_eabi\gcc-arm-none-eabi-9-2019-q4-major-win32\lib\gcc\arm-none-eabi\9.2.1\include\stdint-gcc.h \
  D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Port/Platform/retarget.h \
  d:\place_for_installation\gcc_arm_none_eabi\gcc-arm-none-eabi-9-2019-q4-major-win32\arm-none-eabi\include\sys\stat.h \
  d:\place_for_installation\gcc_arm_none_eabi\gcc-arm-none-eabi-9-2019-q4-major-win32\arm-none-eabi\include\_ansi.h \
@@ -67,6 +69,4 @@ CMakeFiles/STM32F03CBT6.elf.dir/Core/Src/usart.c.obj: \
  d:\place_for_installation\gcc_arm_none_eabi\gcc-arm-none-eabi-9-2019-q4-major-win32\arm-none-eabi\include\xlocale.h \
  d:\place_for_installation\gcc_arm_none_eabi\gcc-arm-none-eabi-9-2019-q4-major-win32\arm-none-eabi\include\stdio.h \
  d:\place_for_installation\gcc_arm_none_eabi\gcc-arm-none-eabi-9-2019-q4-major-win32\lib\gcc\arm-none-eabi\9.2.1\include\stdarg.h \
- d:\place_for_installation\gcc_arm_none_eabi\gcc-arm-none-eabi-9-2019-q4-major-win32\arm-none-eabi\include\sys\stdio.h \
- D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\UserApp/common_inc.h \
- d:\place_for_installation\gcc_arm_none_eabi\gcc-arm-none-eabi-9-2019-q4-major-win32\lib\gcc\arm-none-eabi\9.2.1\include\stdint-gcc.h
+ d:\place_for_installation\gcc_arm_none_eabi\gcc-arm-none-eabi-9-2019-q4-major-win32\arm-none-eabi\include\sys\stdio.h

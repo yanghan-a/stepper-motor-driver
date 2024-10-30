@@ -3,7 +3,6 @@
 #include "Platform/Utils/st_hardware.h"
 #include <tim.h>
 
-
 /* Component Definitions -----------------------------------------------------*/
 BoardConfig_t boardConfig;
 Motor motor;
@@ -15,36 +14,44 @@ void OnButton1Event(Button::Event _event);
 void OnButton2Event(Button::Event _event);
 Led statusLed;
 
-
+int flag_velocity = 0;
+int flag_mt6816 = 0;
 /* Main Entry ----------------------------------------------------------------*/
 void Main()
 {
     uint64_t serialNum = GetSerialNumber();
     uint16_t defaultNodeID = 0;
+    //ID0 is PA8 -->  Switch 4
+    //ID1 is PA9 -->  Switch 3
+    //ID2 is PA10 --> Switch 2
+    uint16_t nodeID = !HAL_GPIO_ReadPin(GPIOA, ID0_Pin);
+    nodeID |= !HAL_GPIO_ReadPin(GPIOA, ID1_Pin) << 1;
+    nodeID |= !HAL_GPIO_ReadPin(GPIOA, ID2_Pin) << 2;
+    defaultNodeID = nodeID;
     // Change below to fit your situation
-    switch (serialNum)
-    {
-        case 431466563640: //J1
-            defaultNodeID = 1;
-            break;
-        case 384624576568: //J2
-            defaultNodeID = 2;
-            break;
-        case 384290670648: //J3
-            defaultNodeID = 3;
-            break;
-        case 431531051064: //J4
-            defaultNodeID = 4;
-            break;
-        case 431466760248: //J5
-            defaultNodeID = 5;
-            break;
-        case 431484848184: //J6
-            defaultNodeID = 6;
-            break;
-        default:
-            break;
-    }
+    // switch (serialNum)
+    // {
+    //     case 431466563640: //J1
+    //         defaultNodeID = 1;
+    //         break;
+    //     case 384624576568: //J2
+    //         defaultNodeID = 2;
+    //         break;
+    //     case 384290670648: //J3
+    //         defaultNodeID = 3;
+    //         break;
+    //     case 431531051064: //J4
+    //         defaultNodeID = 4;
+    //         break;
+    //     case 431466760248: //J5
+    //         defaultNodeID = 5;
+    //         break;
+    //     case 431484848184: //J6
+    //         defaultNodeID = 6;
+    //         break;
+    //     default:
+    //         break;
+    // }
 
 
     /*---------- Apply EEPROM Settings ----------*/
@@ -58,19 +65,21 @@ void Main()
             .canNodeId = defaultNodeID,
             .encoderHomeOffset = 0,
             .defaultMode = Motor::MODE_COMMAND_POSITION,
-            .currentLimit = 1 * 1000,    // A
+            .currentLimit = 1 * 2000,    // mA
             .velocityLimit = 30 * motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS, // r/s
             .velocityAcc = 100 * motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS,   // r/s^2
-            .calibrationCurrent=2000,
+            .calibrationCurrent=2000,// vector of currents for calibration
             .dce_kp = 200,
             .dce_kv = 80,
             .dce_ki = 300,
             .dce_kd = 250,
-            .enableMotorOnBoot=false,
-            .enableStallProtect=false
+            .enableMotorOnBoot=false,// enable motor to the defaultMode
+            .enableStallProtect=false,
+            .enableTempWatch=true,
         };
-        eeprom.put(0, boardConfig);
+        // eeprom.put(0, boardConfig);
     }
+    boardConfig.enableTempWatch=true;
     motor.config.motionParams.encoderHomeOffset = boardConfig.encoderHomeOffset;
     motor.config.motionParams.ratedCurrent = boardConfig.currentLimit;
     motor.config.motionParams.ratedVelocity = boardConfig.velocityLimit;
@@ -78,6 +87,7 @@ void Main()
     motor.motionPlanner.velocityTracker.SetVelocityAcc(boardConfig.velocityAcc);
     motor.motionPlanner.positionTracker.SetVelocityAcc(boardConfig.velocityAcc);
     motor.config.motionParams.caliCurrent = boardConfig.calibrationCurrent;
+
     motor.config.ctrlParams.dce.kp = boardConfig.dce_kp;
     motor.config.ctrlParams.dce.kv = boardConfig.dce_kv;
     motor.config.ctrlParams.dce.ki = boardConfig.dce_ki;
@@ -100,12 +110,19 @@ void Main()
 
     /*------- Start Close-Loop Control Tick ------*/
     HAL_Delay(100);
+    // HAL_TIM_Base_Start_IT(&htim3);  // 200Hz
     HAL_TIM_Base_Start_IT(&htim1);  // 100Hz
     HAL_TIM_Base_Start_IT(&htim4);  // 20kHz
 
     if (button1.IsPressed() && button2.IsPressed())
         encoderCalibrator.isTriggered = true;
+    //encoderCalibrator.isTriggered = true;
 
+    // motor.controller->SetCtrlMode(Motor::MODE_PWM_VELOCITY);
+    // motor.controller->SetVelocitySetPoint(20*motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS);
+
+    // motor.controller->SetCtrlMode(Motor::MODE_PWM_POSITION);
+    // motor.controller->SetPositionSetPoint(100*motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS);
 
     for (;;)
     {
@@ -126,6 +143,14 @@ void Main()
 
 
 /* Event Callbacks -----------------------------------------------------------*/
+extern "C" void Tim3Callback20Hz()
+{
+
+    __HAL_TIM_CLEAR_IT(&htim3, TIM_IT_UPDATE);
+    printf("velocity:%.3f,%.3f,%.3f\r\n", motor.controller->GetVelocity(), motor.controller->GetPosition(false),motor.controller->GetFocCurrent());
+}
+/* Event Callbacks -----------------------------------------------------------*/
+uint32_t count;
 extern "C" void Tim1Callback100Hz()
 {
     __HAL_TIM_CLEAR_IT(&htim1, TIM_IT_UPDATE);
@@ -133,6 +158,16 @@ extern "C" void Tim1Callback100Hz()
     button1.Tick(10);
     button2.Tick(10);
     statusLed.Tick(10, motor.controller->state);
+
+    if (boardConfig.enableTempWatch)
+    {
+        count ++;
+        if ( count >= 100)
+        {
+            boardConfig.motor_temperature = AdcGetChipTemperature();
+            count = 0;
+        }
+    }
 }
 
 
@@ -161,6 +196,7 @@ void OnButton1Event(Button::Event _event)
             // HAL_NVIC_SystemReset();
             break;
         case ButtonBase::CLICK://CLICK is used to stop and store current mode
+            printf("KEY1\r\n");
             if (motor.controller->modeRunning != Motor::MODE_STOP)
             {
                 boardConfig.defaultMode = motor.controller->modeRunning;
@@ -204,6 +240,8 @@ void OnButton2Event(Button::Event _event)
             }
             break;
         case ButtonBase::CLICK:
+            printf("KEY2\r\n");
+
             motor.controller->ClearStallFlag();
             break;
     }

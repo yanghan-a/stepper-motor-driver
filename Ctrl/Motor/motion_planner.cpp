@@ -92,14 +92,14 @@ void MotionPlanner::VelocityTracker::SetVelocityAcc(int32_t _velocityAcc)
 }
 
 
-void MotionPlanner::VelocityTracker::NewTask(int32_t _realVelocity)
+void MotionPlanner::VelocityTracker::NewTask(int32_t _realVelocity)// give the trackVelocity real velocity
 {
     velocityIntegral = 0;
     trackVelocity = _realVelocity;
 }
 
 
-void MotionPlanner::VelocityTracker::CalcSoftGoal(int32_t _goalVelocity)
+void MotionPlanner::VelocityTracker::CalcSoftGoal(int32_t _goalVelocity)// calculate the soft goal velocity, limit the large change of velocity
 {
     int32_t deltaVelocity = _goalVelocity - trackVelocity;
 
@@ -111,7 +111,7 @@ void MotionPlanner::VelocityTracker::CalcSoftGoal(int32_t _goalVelocity)
         if (trackVelocity >= 0)
         {
             CalcVelocityIntegral(velocityAcc);
-            if (trackVelocity >= _goalVelocity)
+            if (trackVelocity >= _goalVelocity)// limit the result get from CalcVelocityIntegral()
             {
                 velocityIntegral = 0;
                 trackVelocity = _goalVelocity;
@@ -193,7 +193,7 @@ void MotionPlanner::PositionTracker::CalcSoftGoal(int32_t _goalPosition)
 
     if (deltaPosition == 0)
     {
-        if ((trackVelocity >= -speedLockingBrake) && (trackVelocity <= speedLockingBrake))
+        if ((trackVelocity >= -speedLockingBrake) && (trackVelocity <= speedLockingBrake))// the velocity is in locking-brake range
         {
             velocityIntegral = 0;
             trackVelocity = 0;
@@ -215,7 +215,8 @@ void MotionPlanner::PositionTracker::CalcSoftGoal(int32_t _goalPosition)
                 trackVelocity = 0;
             }
         }
-    } else
+    }
+    else
     {
         if (trackVelocity == 0)
         {
@@ -232,7 +233,7 @@ void MotionPlanner::PositionTracker::CalcSoftGoal(int32_t _goalPosition)
             {
                 auto need_down_location = (int32_t) ((float) trackVelocity *
                                                      (float) trackVelocity *
-                                                     (float) quickVelocityDownAcc);
+                                                     (float) quickVelocityDownAcc);// define the point to start to slow down
                 if (abs(deltaPosition) > need_down_location)
                 {
                     if (trackVelocity < context->config->ratedVelocity)
@@ -361,7 +362,7 @@ void MotionPlanner::PositionInterpolator::NewTask(int32_t _realPosition, int32_t
 }
 
 
-void MotionPlanner::PositionInterpolator::CalcSoftGoal(int32_t _goalPosition)
+void MotionPlanner::PositionInterpolator::CalcSoftGoal(int32_t _goalPosition)// this function needs to be rewriten
 {
     recordPositionLast = recordPosition;
     recordPosition = _goalPosition;
@@ -410,7 +411,7 @@ void MotionPlanner::TrajectoryTracker::CalcSoftGoal(int32_t _goalPosition, int32
         overtimeFlag = false;
     } else
     {
-        if (updateTime >= (updateTimeout * 1000))
+        if (updateTime >= (updateTimeout * 1000))//每两个点之间要用200ms走完，否则就是超时
             overtimeFlag = true;
         else
             updateTime += context->CONTROL_PERIOD;

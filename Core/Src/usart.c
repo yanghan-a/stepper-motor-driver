@@ -19,9 +19,10 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "usart.h"
-#include "Platform/retarget.h"
+
 /* USER CODE BEGIN 0 */
 #include "common_inc.h"
+#include <Platform/retarget.h>
 volatile uint8_t rxLen = 0;
 uint8_t rx_buffer[BUFFER_SIZE] = {0};
 void (* OnRecvEnd)(uint8_t* data, uint16_t len);
@@ -128,7 +129,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     __HAL_LINKDMA(uartHandle,hdmatx,hdma_usart1_tx);
 
     /* USART1 interrupt Init */
-    HAL_NVIC_SetPriority(USART1_IRQn, 0, 0);
+    HAL_NVIC_SetPriority(USART1_IRQn, 2, 0);
     HAL_NVIC_EnableIRQ(USART1_IRQn);
   /* USER CODE BEGIN USART1_MspInit 1 */
 

@@ -62,8 +62,8 @@ void OnCanCmd(uint8_t _cmd, uint8_t* _data, uint32_t _len)
                 for (int i = 0; i < 4; i++)
                     _data[i] = *(b + i);
                 _data[4] = motor.controller->state == Motor::STATE_FINISH ? 1 : 0;
-                txHeader.StdId = (boardConfig.canNodeId << 7) | 0x23;
-                CAN_Send(&txHeader, _data);
+                txHeader.StdId = (boardConfig.canNodeId << 7) | 0x23;//这里的回复应该是主机一直问，这边一直回来实时更新机械臂的位置
+                CAN_Send(&txHeader, _data);//这里的0x23应该还是一个cmd，由主机那边定义
             }
             break;
         case 0x06:  // Set Position with Time
@@ -225,7 +225,23 @@ void OnCanCmd(uint8_t _cmd, uint8_t* _data, uint32_t _len)
             CAN_Send(&txHeader, _data);
         }
             break;
+        case 0x25: // Get temperature
+            {
+                auto* b = (unsigned char*) &boardConfig.motor_temperature;
+                for (int i = 0; i < 4; i++)
+                    _data[i] = *(b + i);
+                _data[4] = 0;
+                _data[5] = 0;
+                _data[6] = 0;
+                _data[7] = 0;
+                txHeader.StdId = (boardConfig.canNodeId << 7) | 0x25;
+                CAN_Send(&txHeader, _data);
+            }
+            break;
 
+        case 0x7d:  // enable motor temperature watch
+            boardConfig.enableTempWatch = true;
+            break;
         case 0x7e:  // Erase Configs
             boardConfig.configStatus = CONFIG_RESTORE;
             break;

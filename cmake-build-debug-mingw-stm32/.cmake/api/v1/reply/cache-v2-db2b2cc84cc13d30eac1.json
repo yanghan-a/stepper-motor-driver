@@ -555,7 +555,7 @@
 				}
 			],
 			"type" : "FILEPATH",
-			"value" : "D:/Place_for_installation/clion/CLion/CLion 2024.1.5/bin/mingw/bin/dlltool.exe"
+			"value" : "D:/MinGW/bin/dlltool.exe"
 		},
 		{
 			"name" : "CMAKE_EXECUTABLE_FORMAT",

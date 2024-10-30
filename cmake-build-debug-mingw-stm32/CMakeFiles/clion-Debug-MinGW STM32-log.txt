@@ -23,6 +23,6 @@ CMake Deprecation Warning:
 -- Detecting CXX compile features
 -- Detecting CXX compile features - done
 -- Minimal optimization, debug info included
--- Configuring done (5.7s)
--- Generating done (0.0s)
+-- Configuring done (3.9s)
+-- Generating done (0.1s)
 -- Build files have been written to: D:/Place_for_file/CLion/STM32F1/STM32F03CBT6/cmake-build-debug-mingw-stm32

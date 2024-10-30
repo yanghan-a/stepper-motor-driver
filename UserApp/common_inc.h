@@ -21,6 +21,6 @@ void OnCanCmd(uint8_t _cmd, uint8_t* _data, uint32_t _len);
 #include "encoder_calibrator_stm32.h"
 #include "button_stm32.h"
 #include "led_stm32.h"
-
+#include "adc.h"
 #endif
 #endif

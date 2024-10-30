@@ -67,10 +67,10 @@ void MX_CAN_Init(void)
   sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
   sFilterConfig.FilterIdHigh = 0x0000;
   sFilterConfig.FilterIdLow = 0x0000;
-  // è¿™é‡Œè®¾ç½®è¿‡æ»¤å™¨maskï¼Œç”±äºå…¨éƒ¨è¢«ç½®0ï¼Œå› æ­¤ä¸è¿‡æ»¤ä»»ä½•å¸§
+  // ÕâÀïÉèÖÃ¹ıÂËÆ÷mask£¬ÓÉÓÚÈ«²¿±»??0£¬Òò´Ë²»¹ıÂËÈÎºÎ??
   sFilterConfig.FilterMaskIdHigh = 0x0000;
   sFilterConfig.FilterMaskIdLow = 0x0000;
-  // è¿™é‡Œè¿‡æ»¤å™¨è¾“å‡ºåˆ°fifo0ï¼Œå› æ­¤åé¢çš„ä¸­æ–­ä¹Ÿä¸éœ€è¦è€ƒè™‘fifo1
+  // ÕâÀï¹ıÂËÆ÷Êä³öµ½fifo0£¬Òò´ËºóÃæµÄÖĞ¶ÏÒ²²»??Òª???ÂÇfifo1
   sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
   sFilterConfig.FilterActivation = ENABLE;
   sFilterConfig.SlaveStartFilterBank = 14;

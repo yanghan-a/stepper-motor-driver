@@ -104,6 +104,7 @@ int main(void)
   MX_TIM4_Init();
   MX_ADC1_Init();
   MX_CAN_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
   Main();
   /* USER CODE END 2 */

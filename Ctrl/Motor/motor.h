@@ -17,7 +17,7 @@ public:
         config.motionParams.ratedCurrent = 1000;            // (mA)
         config.motionParams.ratedCurrentAcc = 2 * 1000;     // (mA/s)
         config.motionParams.ratedVelocity = 30 * MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS;
-        config.motionParams.ratedVelocityAcc = 1000 * MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS;
+        config.motionParams.ratedVelocityAcc = 100 * MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS;
 
         config.ctrlParams.stallProtectSwitch = false;
         config.ctrlParams.pid =
@@ -139,14 +139,16 @@ public:
 
     private:
         Motor* context;
-        int32_t realLapPosition{};
+        int32_t realLapPosition{};//local position in one circle
         int32_t realLapPositionLast{};
-        int32_t realPosition{};
+        int32_t realPosition{};//global position, absolute position
         int32_t realPositionLast{};
+
         int32_t estVelocity{};
         int32_t estVelocityIntegral{};
         int32_t estLeadPosition{};
         int32_t estPosition{};
+
         int32_t estError{};
         int32_t focCurrent{};
         int32_t goalPosition{};
@@ -161,6 +163,7 @@ public:
         bool softBrake{};
         bool softNewCurve{};
         int32_t focPosition{};
+
         uint32_t stalledTime{};
         uint32_t overloadTime{};
         bool overloadFlag{};

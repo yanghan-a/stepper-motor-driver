@@ -56,22 +56,19 @@ CMakeFiles/STM32F03CBT6.elf.dir/UserApp/protocols/interface_uart.cpp.obj: \
  D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Ctrl\Signal/button_base.h \
  D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Port/led_stm32.h \
  D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Ctrl\Signal/led_base.h \
- D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\UserApp/configurations.h \
- d:\place_for_installation\gcc_arm_none_eabi\gcc-arm-none-eabi-9-2019-q4-major-win32\lib\gcc\arm-none-eabi\9.2.1\include\stdbool.h \
- D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Port/Platform/Memory/eeprom_interface.h \
- D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Port/Platform/Memory/emulated_eeprom.h \
- D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\CMSIS\Device\ST\STM32F1xx\Include/stm32f103xb.h \
- D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\CMSIS\Include/core_cm3.h \
- D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\CMSIS\Include/cmsis_version.h \
- D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\CMSIS\Include/cmsis_compiler.h \
- D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\CMSIS\Include/cmsis_gcc.h \
- D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\CMSIS\Device\ST\STM32F1xx\Include/system_stm32f1xx.h \
+ D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Core\Inc/adc.h \
+ D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Core\Inc/main.h \
  D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\STM32F1xx_HAL_Driver\Inc/stm32f1xx_hal.h \
  D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Core\Inc/stm32f1xx_hal_conf.h \
  D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\STM32F1xx_HAL_Driver\Inc/stm32f1xx_hal_rcc.h \
  D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\STM32F1xx_HAL_Driver\Inc/stm32f1xx_hal_def.h \
  D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\CMSIS\Device\ST\STM32F1xx\Include/stm32f1xx.h \
  D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\CMSIS\Device\ST\STM32F1xx\Include/stm32f103xb.h \
+ D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\CMSIS\Include/core_cm3.h \
+ D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\CMSIS\Include/cmsis_version.h \
+ D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\CMSIS\Include/cmsis_compiler.h \
+ D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\CMSIS\Include/cmsis_gcc.h \
+ D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\CMSIS\Device\ST\STM32F1xx\Include/system_stm32f1xx.h \
  D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\STM32F1xx_HAL_Driver\Inc/Legacy/stm32_hal_legacy.h \
  D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\STM32F1xx_HAL_Driver\Inc/stm32f1xx_hal_rcc_ex.h \
  D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\STM32F1xx_HAL_Driver\Inc/stm32f1xx_hal_gpio.h \
@@ -89,4 +86,9 @@ CMakeFiles/STM32F03CBT6.elf.dir/UserApp/protocols/interface_uart.cpp.obj: \
  D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\STM32F1xx_HAL_Driver\Inc/stm32f1xx_hal_spi.h \
  D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\STM32F1xx_HAL_Driver\Inc/stm32f1xx_hal_tim.h \
  D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\STM32F1xx_HAL_Driver\Inc/stm32f1xx_hal_tim_ex.h \
- D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\STM32F1xx_HAL_Driver\Inc/stm32f1xx_hal_uart.h
+ D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\STM32F1xx_HAL_Driver\Inc/stm32f1xx_hal_uart.h \
+ D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\UserApp/configurations.h \
+ d:\place_for_installation\gcc_arm_none_eabi\gcc-arm-none-eabi-9-2019-q4-major-win32\lib\gcc\arm-none-eabi\9.2.1\include\stdbool.h \
+ D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Port/Platform/Memory/eeprom_interface.h \
+ D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Port/Platform/Memory/emulated_eeprom.h \
+ D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\CMSIS\Device\ST\STM32F1xx\Include/stm32f103xb.h

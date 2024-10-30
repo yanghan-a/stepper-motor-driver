@@ -38,6 +38,7 @@ void EncoderCalibratorBase::CalibrationDataCheck()
         sampleDataAverageForward[count] = (uint16_t) CycleAverage((int32_t) sampleDataAverageForward[count],
                                                                   (int32_t) sampleDataAverageBackward[count],
                                                                   motor->encoder->RESOLUTION);
+        printf("%d: %d\r\n", count, sampleDataAverageForward[count]);
     }
     subData = CycleSubtract((int32_t) sampleDataAverageForward[0],
                             (int32_t) sampleDataAverageForward[MOTOR_ONE_CIRCLE_HARD_STEPS - 1],
@@ -139,13 +140,13 @@ void EncoderCalibratorBase::Tick20kHz()
             if (isTriggered)
             {
                 motor->driver->SetFocCurrentVector(goPosition, motor->config.motionParams.caliCurrent);
-                goPosition = motor->MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS;
+                goPosition = motor->MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS;// from 256*200 start
                 sampleCount = 0;
                 state = CALI_FORWARD_PREPARE;
                 errorCode = CALI_NO_ERROR;
             }
             break;
-        case CALI_FORWARD_PREPARE:
+        case CALI_FORWARD_PREPARE:// run one circle
             goPosition += AUTO_CALIB_SPEED;
             motor->driver->SetFocCurrentVector(goPosition, motor->config.motionParams.caliCurrent);
             if (goPosition == 2 * motor->MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS)

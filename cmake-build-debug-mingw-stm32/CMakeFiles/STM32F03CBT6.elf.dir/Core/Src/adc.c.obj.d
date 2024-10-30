@@ -38,4 +38,15 @@ CMakeFiles/STM32F03CBT6.elf.dir/Core/Src/adc.c.obj: \
  D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\STM32F1xx_HAL_Driver\Inc/stm32f1xx_hal_spi.h \
  D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\STM32F1xx_HAL_Driver\Inc/stm32f1xx_hal_tim.h \
  D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\STM32F1xx_HAL_Driver\Inc/stm32f1xx_hal_tim_ex.h \
- D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\STM32F1xx_HAL_Driver\Inc/stm32f1xx_hal_uart.h
+ D:\Place_for_file\CLion\STM32F1\STM32F03CBT6\Drivers\STM32F1xx_HAL_Driver\Inc/stm32f1xx_hal_uart.h \
+ d:\place_for_installation\gcc_arm_none_eabi\gcc-arm-none-eabi-9-2019-q4-major-win32\arm-none-eabi\include\math.h \
+ d:\place_for_installation\gcc_arm_none_eabi\gcc-arm-none-eabi-9-2019-q4-major-win32\arm-none-eabi\include\sys\reent.h \
+ d:\place_for_installation\gcc_arm_none_eabi\gcc-arm-none-eabi-9-2019-q4-major-win32\arm-none-eabi\include\_ansi.h \
+ d:\place_for_installation\gcc_arm_none_eabi\gcc-arm-none-eabi-9-2019-q4-major-win32\arm-none-eabi\include\newlib.h \
+ d:\place_for_installation\gcc_arm_none_eabi\gcc-arm-none-eabi-9-2019-q4-major-win32\arm-none-eabi\include\sys\config.h \
+ d:\place_for_installation\gcc_arm_none_eabi\gcc-arm-none-eabi-9-2019-q4-major-win32\arm-none-eabi\include\machine\ieeefp.h \
+ d:\place_for_installation\gcc_arm_none_eabi\gcc-arm-none-eabi-9-2019-q4-major-win32\arm-none-eabi\include\sys\_types.h \
+ d:\place_for_installation\gcc_arm_none_eabi\gcc-arm-none-eabi-9-2019-q4-major-win32\arm-none-eabi\include\machine\_types.h \
+ d:\place_for_installation\gcc_arm_none_eabi\gcc-arm-none-eabi-9-2019-q4-major-win32\arm-none-eabi\include\sys\lock.h \
+ d:\place_for_installation\gcc_arm_none_eabi\gcc-arm-none-eabi-9-2019-q4-major-win32\arm-none-eabi\include\sys\cdefs.h \
+ d:\place_for_installation\gcc_arm_none_eabi\gcc-arm-none-eabi-9-2019-q4-major-win32\arm-none-eabi\include\_ansi.h

@@ -44,7 +44,7 @@ void LedBase::Tick(uint32_t _timeElapseMillis, Motor::State_t _state)
             switch (heartBeatPhase)
             {
                 case 1:
-                    if (timer - timerHeartBeat > 100)
+                    if (timer - timerHeartBeat > 200)
                     {
                         SetLedState(0, false);
                         timerHeartBeat = timer;
@@ -52,7 +52,7 @@ void LedBase::Tick(uint32_t _timeElapseMillis, Motor::State_t _state)
                     }
                     break;
                 case 2:
-                    if (timer - timerHeartBeat > 100)
+                    if (timer - timerHeartBeat > 200)
                     {
                         SetLedState(0, true);
                         timerHeartBeat = timer;
@@ -60,7 +60,7 @@ void LedBase::Tick(uint32_t _timeElapseMillis, Motor::State_t _state)
                     }
                     break;
                 case 3:
-                    if (timer - timerHeartBeat > 100)
+                    if (timer - timerHeartBeat > 200)
                     {
                         SetLedState(0, false);
                         timerHeartBeat = timer;
@@ -88,7 +88,7 @@ void LedBase::Tick(uint32_t _timeElapseMillis, Motor::State_t _state)
     switch (blinkPhase)
     {
         case 1:
-            if (timer - timerBlink > 100)
+            if (timer - timerBlink > 200)
             {
                 SetLedState(1, false);
                 timerBlink = timer;
@@ -96,7 +96,7 @@ void LedBase::Tick(uint32_t _timeElapseMillis, Motor::State_t _state)
             }
             break;
         case 2:
-            if (timer - timerBlink > 100)
+            if (timer - timerBlink > 200)
             {
                 blinkNum++;
                 if (targetBlinkNum > blinkNum)

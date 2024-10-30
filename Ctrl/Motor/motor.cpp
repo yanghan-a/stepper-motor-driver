@@ -34,12 +34,12 @@ void Motor::CloseLoopControlTick()
     {
         int32_t angle;
         if (config.motionParams.encoderHomeOffset < MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS / 2)
-        {
+        {//here it rectifies the angle to range of -256*200/2 to 256*200/2
             angle =
                 encoder->angleData.rectifiedAngle >
                 config.motionParams.encoderHomeOffset + MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS / 2 ?
                 encoder->angleData.rectifiedAngle - MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS :
-                encoder->angleData.rectifiedAngle;
+                encoder->angleData.rectifiedAngle;// rectified angle is in range of 0 to 256*200
         } else
         {
             angle =
@@ -67,7 +67,8 @@ void Motor::CloseLoopControlTick()
 
     // Lap-Position calculate
     deltaLapPosition = controller->realLapPosition - controller->realLapPositionLast;
-    if (deltaLapPosition > MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS >> 1)
+
+    if (deltaLapPosition > MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS >> 1)// 这里的操作和第一次调用的操作刚好抵消了
         deltaLapPosition -= MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS;
     else if (deltaLapPosition < -MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS >> 1)
         deltaLapPosition += MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS;
@@ -81,8 +82,8 @@ void Motor::CloseLoopControlTick()
     controller->estVelocityIntegral += (
         (controller->realPosition - controller->realPositionLast) * motionPlanner.CONTROL_FREQUENCY
         + ((controller->estVelocity << 5) - controller->estVelocity)
-    );
-    controller->estVelocity = controller->estVelocityIntegral >> 5;
+    );// here it filters the velocity data, the old data has a weight of 31/32, the new data has a weight of 1/32
+    controller->estVelocity = controller->estVelocityIntegral >> 5;//速度的单位都是转/s
     controller->estVelocityIntegral -= (controller->estVelocity << 5);
 
     // Estimate Position
@@ -109,7 +110,7 @@ void Motor::CloseLoopControlTick()
         driver->Brake();
     } else
     {
-        switch (controller->modeRunning)
+        switch (controller->modeRunning)//control the output according to the mode
         {
             case MODE_STEP_DIR:
                 controller->CalcDceToOutput(controller->softPosition, controller->softVelocity);
@@ -121,19 +122,19 @@ void Motor::CloseLoopControlTick()
                 controller->CalcDceToOutput(controller->softPosition, controller->softVelocity);
                 break;
             case MODE_COMMAND_CURRENT:
-                controller->CalcCurrentToOutput(controller->softCurrent);
+                controller->CalcCurrentToOutput(controller->softCurrent);//finished
                 break;
             case MODE_COMMAND_VELOCITY:
-                controller->CalcPidToOutput(controller->softVelocity);
+                controller->CalcPidToOutput(controller->softVelocity);//here the unit of velocity is 256*200//finished
                 break;
             case MODE_COMMAND_POSITION:
                 controller->CalcDceToOutput(controller->softPosition, controller->softVelocity);
                 break;
             case MODE_PWM_CURRENT:
-                controller->CalcCurrentToOutput(controller->softCurrent);
+                controller->CalcCurrentToOutput(controller->softCurrent);//finished
                 break;
             case MODE_PWM_VELOCITY:
-                controller->CalcPidToOutput(controller->softVelocity);
+                controller->CalcPidToOutput(controller->softVelocity);//finished
                 break;
             case MODE_PWM_POSITION:
                 controller->CalcDceToOutput(controller->softPosition, controller->softVelocity);
@@ -147,11 +148,11 @@ void Motor::CloseLoopControlTick()
     if (controller->modeRunning != controller->requestMode)
     {
         controller->modeRunning = controller->requestMode;
-        controller->softNewCurve = true;
+        controller->softNewCurve = true;// set the new curve flag to true to re-calculate the trajectory
     }
 
     /******************************* Update Hard-Goal *******************************/
-    if (controller->goalVelocity > config.motionParams.ratedVelocity)
+    if (controller->goalVelocity > config.motionParams.ratedVelocity)// limit the user input
         controller->goalVelocity = config.motionParams.ratedVelocity;
     else if (controller->goalVelocity < -config.motionParams.ratedVelocity)
         controller->goalVelocity = -config.motionParams.ratedVelocity;
@@ -161,7 +162,7 @@ void Motor::CloseLoopControlTick()
         controller->goalCurrent = -config.motionParams.ratedCurrent;
 
     /******************************** Motion Plan *********************************/
-    if ((controller->softDisable && !controller->goalDisable) ||
+    if ((controller->softDisable && !controller->goalDisable) ||//here the four boolean are all false
         (controller->softBrake && !controller->goalBrake))
     {
         controller->softNewCurve = true;
@@ -214,16 +215,16 @@ void Motor::CloseLoopControlTick()
         case MODE_STOP:
             break;
         case MODE_COMMAND_POSITION:
-            motionPlanner.positionTracker.CalcSoftGoal(controller->goalPosition);
+            motionPlanner.positionTracker.CalcSoftGoal(controller->goalPosition);//finished
             controller->softPosition = motionPlanner.positionTracker.go_location;
             controller->softVelocity = motionPlanner.positionTracker.go_velocity;
             break;
         case MODE_COMMAND_VELOCITY:
-            motionPlanner.velocityTracker.CalcSoftGoal(controller->goalVelocity);
+            motionPlanner.velocityTracker.CalcSoftGoal(controller->goalVelocity);//finished
             controller->softVelocity = motionPlanner.velocityTracker.goVelocity;
             break;
         case MODE_COMMAND_CURRENT:
-            motionPlanner.currentTracker.CalcSoftGoal(controller->goalCurrent);
+            motionPlanner.currentTracker.CalcSoftGoal(controller->goalCurrent);//finished
             controller->softCurrent = motionPlanner.currentTracker.goCurrent;
             break;
         case MODE_COMMAND_Trajectory:
@@ -232,20 +233,20 @@ void Motor::CloseLoopControlTick()
             controller->softVelocity = motionPlanner.trajectoryTracker.goVelocity;
             break;
         case MODE_PWM_POSITION:
-            motionPlanner.positionTracker.CalcSoftGoal(controller->goalPosition);
+            motionPlanner.positionTracker.CalcSoftGoal(controller->goalPosition);//finished
             controller->softPosition = motionPlanner.positionTracker.go_location;
             controller->softVelocity = motionPlanner.positionTracker.go_velocity;
             break;
         case MODE_PWM_VELOCITY:
-            motionPlanner.velocityTracker.CalcSoftGoal(controller->goalVelocity);
+            motionPlanner.velocityTracker.CalcSoftGoal(controller->goalVelocity);//finished
             controller->softVelocity = motionPlanner.velocityTracker.goVelocity;
             break;
         case MODE_PWM_CURRENT:
-            motionPlanner.currentTracker.CalcSoftGoal(controller->goalCurrent);
+            motionPlanner.currentTracker.CalcSoftGoal(controller->goalCurrent);//finished
             controller->softCurrent = motionPlanner.currentTracker.goCurrent;
             break;
         case MODE_STEP_DIR:
-            motionPlanner.positionInterpolator.CalcSoftGoal(controller->goalPosition);
+            motionPlanner.positionInterpolator.CalcSoftGoal(controller->goalPosition);//finished
             controller->softPosition = motionPlanner.positionInterpolator.goPosition;
             controller->softVelocity = motionPlanner.positionInterpolator.goVelocity;
             break;
@@ -271,7 +272,7 @@ void Motor::CloseLoopControlTick()
         {
             if (abs(controller->estVelocity) < MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS / 5)
             {
-                if (controller->stalledTime >= 1000 * 1000)
+                if (controller->stalledTime >= 1000 * 1000)//堵转时间为1s触发
                     controller->isStalled = true;
                 else
                     controller->stalledTime += motionPlanner.CONTROL_PERIOD;
@@ -287,7 +288,7 @@ void Motor::CloseLoopControlTick()
         (controller->modeRunning != MODE_PWM_CURRENT) &&
         (current == config.motionParams.ratedCurrent))
     {
-        if (controller->overloadTime >= 1000 * 1000)
+        if (controller->overloadTime >= 1000 * 1000)//过载时间为1s触发
             controller->overloadFlag = true;
         else
             controller->overloadTime += motionPlanner.CONTROL_PERIOD;
@@ -381,6 +382,10 @@ void Motor::Controller::CalcPidToOutput(int32_t _speed)
 
 void Motor::Controller::CalcDceToOutput(int32_t _location, int32_t _speed)
 {
+    //kp是位置比例项
+    //ki是位置积分项
+    //kd是速度比例项
+    //kv是速度积分项
     config->dce.pError = _location - estPosition;
     if (config->dce.pError > (3200)) config->dce.pError = (3200);   // limited pError to 1/16r (51200/16)
     if (config->dce.pError < (-3200)) config->dce.pError = (-3200);
@@ -580,6 +585,7 @@ void Motor::Controller::Init()
     softVelocity = 0;
     softCurrent = 0;
     softDisable = false;
+
     softBrake = false;
     softNewCurve = false;
 

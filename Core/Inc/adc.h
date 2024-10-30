@@ -42,7 +42,7 @@ void MX_ADC1_Init(void);
 
 /* USER CODE BEGIN Prototypes */
   extern uint16_t whole_adc_data[2][12];
-
+  float AdcGetChipTemperature();
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

@@ -111,7 +111,7 @@ CMAKE_C_FLAGS_RELEASE:STRING=-O3 -DNDEBUG
 CMAKE_C_FLAGS_RELWITHDEBINFO:STRING=-O2 -g -DNDEBUG
 
 //Path to a program.
-CMAKE_DLLTOOL:FILEPATH=D:/Place_for_installation/clion/CLion/CLion 2024.1.5/bin/mingw/bin/dlltool.exe
+CMAKE_DLLTOOL:FILEPATH=D:/MinGW/bin/dlltool.exe
 
 //Flags used by the linker during all build types.
 CMAKE_EXE_LINKER_FLAGS:STRING=
