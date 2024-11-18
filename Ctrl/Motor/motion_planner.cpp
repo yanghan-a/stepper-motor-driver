@@ -398,6 +398,8 @@ void MotionPlanner::TrajectoryTracker::NewTask(int32_t real_location, int32_t re
 
 void MotionPlanner::TrajectoryTracker::CalcSoftGoal(int32_t _goalPosition, int32_t _goalVelocity)
 {
+
+
     if (_goalVelocity != recordVelocity || _goalPosition != recordPosition)
     {
         updateTime = 0;

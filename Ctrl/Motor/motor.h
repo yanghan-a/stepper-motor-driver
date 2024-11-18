@@ -90,6 +90,7 @@ public:
         {
             int32_t kp, kv, ki, kd;
             int32_t pError, vError;
+            int32_t real_pError,real_vError;
             int32_t outputKp, outputKi, outputKd;
             int32_t integralRound;
             int32_t integralRemainder;
@@ -129,6 +130,9 @@ public:
         bool SetPositionSetPointWithTime(int32_t _pos, float _time);
         float GetPosition(bool _isLap = false);
         float GetVelocity();
+        float GetAcceleration();
+        float getGoalPosition();
+        float getGoalVelocity();
         float GetFocCurrent();
         void AddTrajectorySetPoint(int32_t _pos, int32_t _vel);
         void SetDisable(bool _disable);
@@ -148,6 +152,10 @@ public:
         int32_t estVelocityIntegral{};
         int32_t estLeadPosition{};
         int32_t estPosition{};
+
+        int32_t estAcceleration{};
+        int32_t estAccelerationIntegral{};
+        int32_t estVelocityLast{};
 
         int32_t estError{};
         int32_t focCurrent{};

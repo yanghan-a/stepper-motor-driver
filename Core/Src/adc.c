@@ -21,7 +21,7 @@
 #include "adc.h"
 
 /* USER CODE BEGIN 0 */
-//用来存放两个ADC通道的采样�?�，实际上只用到这个二维数组的两个位�?
+//用来存放两个ADC通道的采样�?�，实际上只用到这个二维数组的两个位�??
 #include "math.h"
 uint16_t whole_adc_data[2][12];
 float motor_temperature;

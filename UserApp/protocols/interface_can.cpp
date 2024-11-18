@@ -105,6 +105,30 @@ void OnCanCmd(uint8_t _cmd, uint8_t* _data, uint32_t _len)
         }
             break;
 
+        case 0x08:  // the trajectory mode
+            {
+                if (motor.controller->modeRunning != Motor::MODE_COMMAND_Trajectory)
+                {
+                    motor.config.motionParams.ratedVelocity = boardConfig.velocityLimit;
+                    motor.controller->SetCtrlMode(Motor::MODE_COMMAND_Trajectory);
+                }
+                motor.controller->AddTrajectorySetPoint(
+                    (int32_t) (*(float*) RxData * (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS),
+                       (int32_t) (*(float*) (RxData + 4) * (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS));
+                // Always Need Position & Finished ACK
+                tmpF = motor.controller->GetPosition();
+                auto* b = (unsigned char*) &tmpF;
+                for (int i = 0; i < 4; i++)
+                    _data[i] = *(b + i);
+                _data[4] = motor.controller->state == Motor::STATE_FINISH ? 1 : 0;
+                txHeader.StdId = (boardConfig.canNodeId << 7) | 0x23;
+                CAN_Send(&txHeader, _data);
+            }
+            break;
+
+
+
+
             // 0x10~0x1F CMDs with Memory
         case 0x11:  // Set Node-ID and Store to EEPROM
             boardConfig.canNodeId = *(uint32_t*) (RxData);

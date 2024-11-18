@@ -40,7 +40,7 @@ extern UART_HandleTypeDef huart1;
 extern DMA_HandleTypeDef hdma_usart1_rx;
 extern DMA_HandleTypeDef hdma_usart1_tx;
 extern volatile uint8_t rxLen;
-extern volatile uint8_t recv_end_flag;
+// extern volatile uint8_t recv_end_flag;
 extern uint8_t rx_buffer[BUFFER_SIZE];
 /* USER CODE END Private defines */
 

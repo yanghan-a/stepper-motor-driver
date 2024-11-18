@@ -78,13 +78,24 @@ void Motor::CloseLoopControlTick()
     controller->realPosition += deltaLapPosition;
 
     /********************************* Estimate Data *********************************/
-    // Estimate Velocity
+    // Estimate Velocity and acceleration
+    controller->estVelocityLast = controller->estVelocity;
     controller->estVelocityIntegral += (
         (controller->realPosition - controller->realPositionLast) * motionPlanner.CONTROL_FREQUENCY
         + ((controller->estVelocity << 5) - controller->estVelocity)
     );// here it filters the velocity data, the old data has a weight of 31/32, the new data has a weight of 1/32
+
     controller->estVelocity = controller->estVelocityIntegral >> 5;//速度的单位都是转/s
+    controller->estAccelerationIntegral += (
+        (controller->estVelocity - controller->estVelocityLast) * motionPlanner.CONTROL_FREQUENCY
+        + ((controller->estAcceleration << 10) - controller->estAcceleration)
+    );
+
+    controller->estAcceleration = controller->estAccelerationIntegral >> 10;//加速度的单位都是转/s^2
+
+
     controller->estVelocityIntegral -= (controller->estVelocity << 5);
+    controller->estAccelerationIntegral -= (controller->estAcceleration << 10);
 
     // Estimate Position
     controller->estLeadPosition = Controller::CompensateAdvancedAngle(controller->estVelocity);
@@ -386,10 +397,24 @@ void Motor::Controller::CalcDceToOutput(int32_t _location, int32_t _speed)
     //ki是位置积分项
     //kd是速度比例项
     //kv是速度积分项
+
     config->dce.pError = _location - estPosition;
+    config->dce.real_pError = config->dce.pError;
+    if(config->dce.pError <15 && config->dce.pError > -15)
+    {
+        config->dce.pError = 0;
+    }
     if (config->dce.pError > (3200)) config->dce.pError = (3200);   // limited pError to 1/16r (51200/16)
     if (config->dce.pError < (-3200)) config->dce.pError = (-3200);
+
     config->dce.vError = (_speed - estVelocity) >> 7;
+    config->dce.real_vError = config->dce.vError;
+    if(config->dce.vError <50 && config->dce.vError > -50)
+    {
+        config->dce.vError = 0;
+    }
+
+
     if (config->dce.vError > (4000)) config->dce.vError = (4000);   // limited vError
     if (config->dce.vError < (-4000)) config->dce.vError = (-4000);
 
@@ -489,10 +514,24 @@ float Motor::Controller::GetVelocity()
     return (float) estVelocity / (float) context->MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS;
 }
 
+float Motor::Controller::GetAcceleration()
+{
+    return (float) estAcceleration / (float) context->MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS;
+}
 
 float Motor::Controller::GetFocCurrent()
 {
     return (float) focCurrent / 1000.f;
+}
+
+float Motor::Controller::getGoalPosition()
+{
+    return (float) goalPosition / (float) context->MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS;
+}
+
+float Motor::Controller::getGoalVelocity()
+{
+    return (float) goalVelocity / (float) context->MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS;
 }
 
 
@@ -571,6 +610,8 @@ void Motor::Controller::Init()
 
     estVelocityIntegral = 0;
     estVelocity = 0;
+    estAcceleration = 0;
+    estVelocityLast = 0;
     estLeadPosition = 0;
     estPosition = 0;
     estError = 0;
