@@ -19,8 +19,6 @@ void OnButton1Event(Button::Event _event);
 void OnButton2Event(Button::Event _event);
 Led statusLed;
 
-int flag_velocity = 0;
-int flag_mt6816 = 0;
 /* Main Entry ----------------------------------------------------------------*/
 void Main()
 {
@@ -62,7 +60,7 @@ void Main()
     /*---------- Apply EEPROM Settings ----------*/
     // Setting priority is EEPROM > Motor.h
     EEPROM eeprom;
-    // eeprom.get(0, boardConfig);
+    eeprom.get(0, boardConfig);
     if (boardConfig.configStatus != CONFIG_OK) // use default settings
     {
         boardConfig = BoardConfig_t{
@@ -71,18 +69,18 @@ void Main()
             .encoderHomeOffset = 0,
             .defaultMode = Motor::MODE_COMMAND_POSITION,
             .currentLimit = 1 * 2000,    // mA
-            .velocityLimit = 30 * motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS, // r/s
+            .velocityLimit =30 * motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS, // r/s
             .velocityAcc = 100 * motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS,   // r/s^2
             .calibrationCurrent=2000,// vector of currents for calibration
-            .dce_kp = 2000,// 200,
-            .dce_kv = 120,//80,
-            .dce_ki = 200,//300,
-            .dce_kd = 300,//250,
+            .dce_kp = 2000,// 200,2000,关节3 800
+            .dce_kv = 120,//80,120
+            .dce_ki = 200,//300,200
+            .dce_kd = 300,//250,300
             .enableMotorOnBoot=false,// enable motor to the defaultMode
             .enableStallProtect=false,
             .enableTempWatch=true,
         };
-        // eeprom.put(0, boardConfig);
+        eeprom.put(0, boardConfig);
     }
     boardConfig.enableTempWatch=true;
     motor.config.motionParams.encoderHomeOffset = boardConfig.encoderHomeOffset;
@@ -115,8 +113,8 @@ void Main()
 
     /*------- Start Close-Loop Control Tick ------*/
     HAL_Delay(100);
-    HAL_TIM_Base_Start_IT(&htim3);  // 1000Hz
-    HAL_TIM_Base_Start_IT(&htim1);  // 100Hz
+    // HAL_TIM_Base_Start_IT(&htim3);  // 500Hz
+    HAL_TIM_Base_Start_IT(&htim1);  // 500Hz
     HAL_TIM_Base_Start_IT(&htim4);  // 20kHz
 
     if (button1.IsPressed() && button2.IsPressed())
@@ -145,83 +143,123 @@ void Main()
         }
     }
 }
-uint8_t parameters[24];
+uint8_t parameters[36];
 float position, velocity, acceleration, foc_current;
-float goal_position, goal_velocity;
-int32_t point;
-float foc_current_last;
+float goal_position, goal_velocity,goal_acceleration, soft_position, soft_velocity;
+
+float foc_current_last, acceleration_last;
+float dynamic_acc;
+float delta_pos;
+
 /* Event Callbacks -----------------------------------------------------------*/
-extern "C" void Tim3Callback20Hz()//1000Hz
+extern "C" void Tim3Callback20Hz()//400Hz
 {
 
     __HAL_TIM_CLEAR_IT(&htim3, TIM_IT_UPDATE);
-    // printf("%d,%d,%d,%d\n", motor.controller->config->dce.vError,motor.controller->config->dce.real_vError, motor.controller->config->dce.pError,motor.controller->config->dce.real_pError);
-    // printf("%.4f,%.4f,%.4f,%.4f\n",motor.controller->GetVelocity(), motor.controller->GetPosition(), motor.controller->GetFocCurrent(),motor.controller->GetAcceleration());
-    // position = motor.controller->GetPosition();
-    // velocity = motor.controller->GetVelocity();
-    // acceleration = motor.controller->GetAcceleration();
-    // foc_current = motor.controller->GetFocCurrent()*10.f;
-    // memcpy(parameters + 0 * sizeof(float), &position, sizeof(float));
-    // memcpy(parameters + 1 * sizeof(float), &velocity, sizeof(float));
-    // memcpy(parameters + 2 * sizeof(float), &acceleration, sizeof(float));
-    // memcpy(parameters + 3 * sizeof(float), &foc_current, sizeof(float));
-    // parameters[16]=0x00;
-    // parameters[17]=0x00;
-    // parameters[18]=0x80;
-    // parameters[19]=0x7f;
+
     position = motor.controller->GetPosition();
     velocity = motor.controller->GetVelocity();
-    goal_position = motor.controller->getGoalPosition();
-    goal_velocity = motor.controller->getGoalVelocity();
-    foc_current = motor.controller->GetFocCurrent()*0.1f+foc_current_last*0.9f;
+    acceleration = motor.controller->GetAcceleration();//*0.15f+acceleration_last*0.85f;
+
+    // goal_position = motor.controller->getGoalPosition();
+    // goal_velocity = motor.controller->getGoalVelocity();
+    // goal_acceleration = motor.controller->getGoalAcceleration();
+
+    foc_current = motor.controller->GetFocCurrent();//*0.1f+foc_current_last*0.9f;
+
+
+
+    // soft_position = motor.controller->getSoftPosition();
+    // soft_velocity = motor.controller->getSoftVelocity();
+
     memcpy(parameters + 0 * sizeof(float), &position, sizeof(float));
     memcpy(parameters + 1 * sizeof(float), &velocity, sizeof(float));
-    memcpy(parameters + 2 * sizeof(float), &goal_position, sizeof(float));
-    memcpy(parameters + 3 * sizeof(float), &goal_velocity, sizeof(float));
-    memcpy(parameters + 4 * sizeof(float), &foc_current, sizeof(float));
-    parameters[20]=0x00;
-    parameters[21]=0x00;
-    parameters[22]=0x80;
-    parameters[23]=0x7f;
-    HAL_UART_Transmit_DMA(&huart1, (uint8_t*)parameters, 24);
+    memcpy(parameters + 2 * sizeof(float), &acceleration, sizeof(float));
 
-    foc_current_last = foc_current;
+    // memcpy(parameters + 3 * sizeof(float), &goal_position, sizeof(float));
+    // memcpy(parameters + 4 * sizeof(float), &goal_velocity, sizeof(float));
+    // memcpy(parameters + 5 * sizeof(float), &goal_acceleration, sizeof(float));
+
+    memcpy(parameters + 3 * sizeof(float), &foc_current, sizeof(float));
+
+    parameters[16]=0x00;
+    parameters[17]=0x00;
+    parameters[18]=0x80;
+    parameters[19]=0x7f;
+    HAL_UART_Transmit_DMA(&huart1, (uint8_t*)parameters, 20);
+
+    // foc_current_last = foc_current;
+    // acceleration_last = acceleration;
 }
 /* Event Callbacks -----------------------------------------------------------*/
 uint32_t count;
-extern float buffer_pos[400];
-extern float buffer_vel[400];
-extern int buffer_len;
-extern "C" void Tim1Callback100Hz()
+int32_t point;
+extern bool flag_conduct;
+float freq = 500.0f;
+float dt = 1/freq;
+// float a = -6.0f;
+float period = 10.0f;//400.0f;//2000.0f;
+float period_int = period*freq;
+float all_time = period_int*1;
+
+const float rad2deg = 57.295779513082320876798154814105f;
+const float wf = 0.2*3.14159265358979323846f;
+
+const float a_matrix[5] = {-0.123316804849684,	0.793963582904313,	0.00111207893058989,	-0.000288722978072079,	-0.671470134007146};
+const float b_matrix[5] = {-0.0216258783395260,	-0.341387912977113,	-0.00414640023862495,	-4.50508800798218e-06,	0.143371785072332};
+const float qi0[1] = {-0.262651393251000};
+float sin_value[5];
+float cos_value[5];
+float pos, vel, acc;
+extern "C" void Tim1Callback100Hz()//400Hz
 {
     __HAL_TIM_CLEAR_IT(&htim1, TIM_IT_UPDATE);
 
-    button1.Tick(10);
-    button2.Tick(10);
-    statusLed.Tick(10, motor.controller->state);
+    button1.Tick(2);
+    button2.Tick(2);
+    statusLed.Tick(2, motor.controller->state);
 
-    point ++;
-    if(buffer_len>0)
+
+    //下面是单个电机测试
+    if(flag_conduct && point<=all_time)
     {
-        // float pos = 10*cos((float)buffer_pos[point%256]/400.f*2*3.14159265358979323846f)-10;
-        // float vel = -10*sin((float)buffer_vel[point%256]/400.f*2*3.14159265358979323846f)*2*3.14159265358979323846f/4.f;
-        float pos = buffer_pos[point%((sizeof(buffer_pos) / sizeof(buffer_pos[0])))];
-        float vel = buffer_vel[point%((sizeof(buffer_pos) / sizeof(buffer_pos[0])))];
+        for(int i=1;i<6;i++)
+        {
+            sin_value[i-1] = sinf((float)point*dt*(float)i/period*2*3.14159265358979323846f);
+            cos_value[i-1] = cosf((float)point*dt*(float)i/period*2*3.14159265358979323846f);
+        }
+        pos = a_matrix[0]*sin_value[0]/wf/1-b_matrix[0]*cos_value[0]/wf/1+a_matrix[1]*sin_value[1]/wf/2-b_matrix[1]*cos_value[1]/wf/2+
+                    a_matrix[2]*sin_value[2]/wf/3-b_matrix[2]*cos_value[2]/wf/3+a_matrix[3]*sin_value[3]/wf/4-b_matrix[3]*cos_value[3]/wf/4+
+                        a_matrix[4]*sin_value[4]/wf/5-b_matrix[4]*cos_value[4]/wf/5 +qi0[0];
+        pos = pos*rad2deg*50/360;
+
+        // float pos = a*cos((float)point/period*2*3.14159265358979323846f)-a;
+        // float vel = -a*sin((float)point/period*2*3.14159265358979323846f)*2*3.14159265358979323846f/3.f;
+        // float acc = -a*cos((float)point/period*2*3.14159265358979323846f)*2*3.14159265358979323846f/3.f*2*3.14159265358979323846f/3.f;
+        // motor.controller->AddTrajectorySetPoint((int32_t) (pos * (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS),
+        //                    vel * (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS,
+        //                    acc * (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS);
         motor.controller->AddTrajectorySetPoint((int32_t) (pos * (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS),
-                           (int32_t) (vel* (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS));
+                           vel* (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS,
+                           acc * (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS);
+        point ++;
+    }else
+    {
+        point = 0;
+        flag_conduct = false;
     }
 
 
     count++;
-    // if (boardConfig.enableTempWatch)
-    // {
-    //     count ++;
-    //     if ( count >= 100)
-    //     {
-    //         boardConfig.motor_temperature = AdcGetChipTemperature();
-    //         count = 0;
-    //     }
-    // }
+    if (boardConfig.enableTempWatch)
+    {
+        count ++;
+        if ( count >= 100)
+        {
+            boardConfig.motor_temperature = AdcGetChipTemperature();
+            count = 0;
+        }
+    }
 }
 
 
@@ -289,7 +327,7 @@ void OnButton2Event(Button::Event _event)
                     motor.controller->SetPositionSetPoint(0);
                     break;
                 case Motor::MODE_COMMAND_Trajectory:
-                case Motor::MODE_STEP_DIR:
+                // case Motor::MODE_STEP_DIR:
                 case Motor::MODE_STOP:
                     break;
             }

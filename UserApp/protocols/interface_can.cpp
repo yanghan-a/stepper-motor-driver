@@ -6,6 +6,10 @@
 extern Motor motor;
 extern EncoderCalibrator encoderCalibrator;
 
+// int32_t traj_position = 0.0f;
+// int32_t traj_velocity = 0.0f;
+// int32_t traj_acceleration = 0.0f;
+
 CAN_TxHeaderTypeDef txHeader =
     {
         .StdId = 0x00,
@@ -20,6 +24,10 @@ CAN_TxHeaderTypeDef txHeader =
 void OnCanCmd(uint8_t _cmd, uint8_t* _data, uint32_t _len)
 {
     float tmpF;
+    float velocity;
+    float acceleration;
+    float current;
+
     int32_t tmpI;
 
     switch (_cmd)
@@ -47,43 +55,55 @@ void OnCanCmd(uint8_t _cmd, uint8_t* _data, uint32_t _len)
                 (int32_t) (*(float*) RxData *
                            (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS));
             break;
-        case 0x05:  // Set Position SetPoint
-            if (motor.controller->modeRunning != Motor::MODE_COMMAND_POSITION)
-            {
-                motor.config.motionParams.ratedVelocity = boardConfig.velocityLimit;
-                motor.controller->SetCtrlMode(Motor::MODE_COMMAND_POSITION);
-            }
-            motor.controller->SetPositionSetPoint(
-                (int32_t) (*(float*) RxData * (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS));
-            if (_data[4]) // Need Position & Finished ACK
-            {
-                tmpF = motor.controller->GetPosition();
-                auto* b = (unsigned char*) &tmpF;
-                for (int i = 0; i < 4; i++)
-                    _data[i] = *(b + i);
-                _data[4] = motor.controller->state == Motor::STATE_FINISH ? 1 : 0;
-                txHeader.StdId = (boardConfig.canNodeId << 7) | 0x23;//这里的回复应该是主机一直问，这边一直回来实时更新机械臂的位置
-                CAN_Send(&txHeader, _data);//这里的0x23应该还是一个cmd，由主机那边定义
-            }
-            break;
-        case 0x06:  // Set Position with Time
-            if (motor.controller->modeRunning != Motor::MODE_COMMAND_POSITION)
-                motor.controller->SetCtrlMode(Motor::MODE_COMMAND_POSITION);
-            motor.controller->SetPositionSetPointWithTime(
-                (int32_t) (*(float*) RxData * (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS),
-                *(float*) (RxData + 4));
-            if (_data[4]) // Need Position & Finished ACK
-            {
-                tmpF = motor.controller->GetPosition();
-                auto* b = (unsigned char*) &tmpF;
-                for (int i = 0; i < 4; i++)
-                    _data[i] = *(b + i);
-                _data[4] = motor.controller->state == Motor::STATE_FINISH ? 1 : 0;
-                txHeader.StdId = (boardConfig.canNodeId << 7) | 0x23;
-                CAN_Send(&txHeader, _data);
-            }
-            break;
-        case 0x07:  // Set Position with Velocity-Limit
+        // case 0x05:  // Set Position SetPoint
+        //     if (motor.controller->modeRunning != Motor::MODE_COMMAND_POSITION)
+        //     {
+        //         motor.config.motionParams.ratedVelocity = boardConfig.velocityLimit;
+        //         motor.controller->SetCtrlMode(Motor::MODE_COMMAND_POSITION);
+        //     }
+        //     motor.controller->SetPositionSetPoint(
+        //         (int32_t) (*(float*) RxData * (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS));
+        //     if (_data[4]) // Need Position & Finished ACK
+        //     {
+        //         tmpF = motor.controller->GetPosition();
+        //         auto* b = (unsigned char*) &tmpF;
+        //         for (int i = 0; i < 4; i++)
+        //             _data[i] = *(b + i);
+        //         _data[4] = motor.controller->state == Motor::STATE_FINISH ? 1 : 0;
+        //         txHeader.StdId = (boardConfig.canNodeId << 7) | 0x23;//这里的回复应该是主机一直问，这边一直回来实时更新机械臂的位置
+        //         CAN_Send(&txHeader, _data);//这里的0x23应该还是一个cmd，由主机那边定义
+        //         //
+        //         // //返回位置的同时反馈速度和电流数据
+        //         // current = motor.controller->GetFocCurrent();
+        //         // b = (unsigned char*) &current;
+        //         // for (int i = 0; i < 4; i++)
+        //         //     _data[i] = *(b + i);
+        //         // velocity = motor.controller->GetVelocity();
+        //         // b = (unsigned char*) &velocity;
+        //         // for (int i = 0; i < 4; i++)
+        //         //     _data[i + 4] = *(b + i);
+        //         // txHeader.StdId = (boardConfig.canNodeId << 7) | 0x26;
+        //         // CAN_Send(&txHeader, _data);
+        //     }
+        //     break;
+        // case 0x06:  // Set Position with Time
+        //     if (motor.controller->modeRunning != Motor::MODE_COMMAND_POSITION)
+        //         motor.controller->SetCtrlMode(Motor::MODE_COMMAND_POSITION);
+        //     motor.controller->SetPositionSetPointWithTime(
+        //         (int32_t) (*(float*) RxData * (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS),
+        //         *(float*) (RxData + 4));
+        //     if (_data[4]) // Need Position & Finished ACK
+        //     {
+        //         tmpF = motor.controller->GetPosition();
+        //         auto* b = (unsigned char*) &tmpF;
+        //         for (int i = 0; i < 4; i++)
+        //             _data[i] = *(b + i);
+        //         _data[4] = motor.controller->state == Motor::STATE_FINISH ? 1 : 0;
+        //         txHeader.StdId = (boardConfig.canNodeId << 7) | 0x23;
+        //         CAN_Send(&txHeader, _data);
+        //     }
+        //     break;
+        case 0x07:  // Set Position with Velocity-Limit包含速度限制的位置模式
         {
             if (motor.controller->modeRunning != Motor::MODE_COMMAND_POSITION)
             {
@@ -102,31 +122,90 @@ void OnCanCmd(uint8_t _cmd, uint8_t* _data, uint32_t _len)
             _data[4] = motor.controller->state == Motor::STATE_FINISH ? 1 : 0;
             txHeader.StdId = (boardConfig.canNodeId << 7) | 0x23;
             CAN_Send(&txHeader, _data);
+
+            //返回位置的同时反馈速度和电流数据
+            // current = motor.controller->GetFocCurrent();
+            // b = (unsigned char*) &current;
+            // for (int i = 0; i < 4; i++)
+            //     _data[i] = *(b + i);
+            // velocity = motor.controller->GetVelocity();
+            // b = (unsigned char*) &velocity;
+            // for (int i = 0; i < 4; i++)
+            //     _data[i + 4] = *(b + i);
+            // txHeader.StdId = (boardConfig.canNodeId << 7) | 0x26;
+            // CAN_Send(&txHeader, _data);
         }
             break;
 
-        case 0x08:  // the trajectory mode
-            {
-                if (motor.controller->modeRunning != Motor::MODE_COMMAND_Trajectory)
-                {
-                    motor.config.motionParams.ratedVelocity = boardConfig.velocityLimit;
-                    motor.controller->SetCtrlMode(Motor::MODE_COMMAND_Trajectory);
-                }
-                motor.controller->AddTrajectorySetPoint(
-                    (int32_t) (*(float*) RxData * (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS),
-                       (int32_t) (*(float*) (RxData + 4) * (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS));
-                // Always Need Position & Finished ACK
-                tmpF = motor.controller->GetPosition();
-                auto* b = (unsigned char*) &tmpF;
-                for (int i = 0; i < 4; i++)
-                    _data[i] = *(b + i);
-                _data[4] = motor.controller->state == Motor::STATE_FINISH ? 1 : 0;
-                txHeader.StdId = (boardConfig.canNodeId << 7) | 0x23;
-                CAN_Send(&txHeader, _data);
-            }
-            break;
+        // case 0x08:  // the trajectory mode, 获得速度和位置
+        //     {
+        //         traj_position = (int32_t) (*(float*) RxData * (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS);
+        //         traj_velocity = (int32_t) (*(float*) (RxData + 4) * (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS);
+        //     }
+        //     break;
+        //
+        // case 0x09:  // 同时需要位置、速度、加速度的轨迹模式
+        //     {
+        //         if (motor.controller->modeRunning != Motor::MODE_COMMAND_Trajectory)
+        //         {
+        //             motor.config.motionParams.ratedVelocity = boardConfig.velocityLimit;
+        //             motor.controller->SetCtrlMode(Motor::MODE_COMMAND_Trajectory);
+        //         }
+        //         motor.controller->AddTrajectorySetPoint(
+        //             traj_position,traj_velocity,
+        //                (int32_t) (*(float*) RxData * (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS));
+        //
+        //         //反馈位置和速度
+        //         tmpF = motor.controller->GetPosition();
+        //         auto* b = (unsigned char*) &tmpF;
+        //         for (int i = 0; i < 4; i++)
+        //             _data[i] = *(b + i);
+        //
+        //         velocity = motor.controller->GetVelocity();
+        //         b = (unsigned char*) &velocity;
+        //         for (int i = 0; i < 4; i++)
+        //             _data[i+4] = *(b + i);
+        //         txHeader.StdId = (boardConfig.canNodeId << 7) | 0x26;
+        //         CAN_Send(&txHeader, _data);
+        //
+        //         //反馈加速度和电流
+        //         acceleration = motor.controller->GetAcceleration();
+        //         b = (unsigned char*) &acceleration;
+        //         for (int i = 0; i < 4; i++)
+        //             _data[i] = *(b + i);
+        //         current = motor.controller->GetFocCurrent();
+        //         b = (unsigned char*) &current;
+        //         for (int i = 0; i < 4; i++)
+        //             _data[i+4] = *(b + i);
+        //         txHeader.StdId = (boardConfig.canNodeId << 7) | 0x27;
+        //         CAN_Send(&txHeader, _data);
+        //     }
+        //     break;
 
-
+        // case 0x10:  // 只需要位置的轨迹模式
+        //     {
+        //         if (motor.controller->modeRunning != Motor::MODE_COMMAND_POSITION_TRAJECTORY)
+        //         {
+        //             motor.config.motionParams.ratedVelocity = boardConfig.velocityLimit;
+        //             motor.controller->SetCtrlMode(Motor::MODE_COMMAND_POSITION_TRAJECTORY);
+        //         }
+        //         motor.controller->AddTrajectorySetPoint(
+        //             (int32_t) (*(float*) RxData * (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS),0,
+        //                0);
+        //         //反馈位置和速度
+        //         tmpF = motor.controller->GetPosition();
+        //         auto* b = (unsigned char*) &tmpF;
+        //         for (int i = 0; i < 4; i++)
+        //             _data[i] = *(b + i);
+        //
+        //         velocity = motor.controller->GetVelocity();
+        //         b = (unsigned char*) &velocity;
+        //         for (int i = 0; i < 4; i++)
+        //             _data[i+4] = *(b + i);
+        //         txHeader.StdId = (boardConfig.canNodeId << 7) | 0x10;
+        //         CAN_Send(&txHeader, _data);
+        //     }
+        //     break;
 
 
             // 0x10~0x1F CMDs with Memory
@@ -203,38 +282,68 @@ void OnCanCmd(uint8_t _cmd, uint8_t* _data, uint32_t _len)
 
 
             // 0x20~0x2F Inquiry CMDs
-        case 0x21: // Get Current
+        case 0x21: // 返回加速度和速度
         {
-            tmpF = motor.controller->GetFocCurrent();
-            auto* b = (unsigned char*) &tmpF;
+            //反馈加速度和电流
+            acceleration = motor.controller->GetAcceleration();
+            auto* b = (unsigned char*) &acceleration;
             for (int i = 0; i < 4; i++)
                 _data[i] = *(b + i);
-            _data[4] = (motor.controller->state == Motor::STATE_FINISH ? 1 : 0);
-
-            txHeader.StdId = (boardConfig.canNodeId << 7) | 0x21;
-            CAN_Send(&txHeader, _data);
+                velocity = motor.controller->GetVelocity();
+                b = (unsigned char*) &velocity;
+                for (int i = 0; i < 4; i++)
+                    _data[i+4] = *(b + i);
+                txHeader.StdId = (boardConfig.canNodeId << 7) | 0x21;
+                CAN_Send(&txHeader, _data);
         }
             break;
-        case 0x22: // Get Velocity
-        {
-            tmpF = motor.controller->GetVelocity();
-            auto* b = (unsigned char*) &tmpF;
-            for (int i = 0; i < 4; i++)
-                _data[i] = *(b + i);
-            _data[4] = (motor.controller->state == Motor::STATE_FINISH ? 1 : 0);
 
-            txHeader.StdId = (boardConfig.canNodeId << 7) | 0x22;
-            CAN_Send(&txHeader, _data);
-        }
+        case 0x22:  // 只需要位置的轨迹模式，返回位置和电流
+            {
+                if (motor.controller->modeRunning != Motor::MODE_COMMAND_POSITION_TRAJECTORY)
+                {
+                    motor.config.motionParams.ratedVelocity = boardConfig.velocityLimit;
+                    motor.controller->SetCtrlMode(Motor::MODE_COMMAND_POSITION_TRAJECTORY);
+                }
+                motor.controller->AddTrajectorySetPoint(
+                    (int32_t) (*(float*) RxData * (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS),0,
+                       0);
+                //反馈位置和速度
+                tmpF = motor.controller->GetPosition();
+                auto* b = (unsigned char*) &tmpF;
+                for (int i = 0; i < 4; i++)
+                    _data[i] = *(b + i);
+                current = motor.controller->GetFocCurrent();
+                b = (unsigned char*) &current;
+                for (int i = 0; i < 4; i++)
+                    _data[i+4] = *(b + i);
+                txHeader.StdId = (boardConfig.canNodeId << 7) | 0x22;
+                CAN_Send(&txHeader, _data);
+
+            }
             break;
+        // case 0x22: // Get Velocity
+        // {
+        //     tmpF = motor.controller->GetVelocity();
+        //     auto* b = (unsigned char*) &tmpF;
+        //     for (int i = 0; i < 4; i++)
+        //         _data[i] = *(b + i);
+        //     _data[4] = (motor.controller->state == Motor::STATE_FINISH ? 1 : 0);
+        //
+        //     txHeader.StdId = (boardConfig.canNodeId << 7) | 0x22;
+        //     CAN_Send(&txHeader, _data);
+        // }
+        //     break;
         case 0x23: // Get Position
         {
+            //反馈位置和速度
             tmpF = motor.controller->GetPosition();
             auto* b = (unsigned char*) &tmpF;
             for (int i = 0; i < 4; i++)
                 _data[i] = *(b + i);
-            // Finished ACK
-            _data[4] = motor.controller->state == Motor::STATE_FINISH ? 1 : 0;
+
+            _data[4] = (motor.controller->state == Motor::STATE_FINISH ? 1 : 0);
+
             txHeader.StdId = (boardConfig.canNodeId << 7) | 0x23;
             CAN_Send(&txHeader, _data);
         }
@@ -249,19 +358,19 @@ void OnCanCmd(uint8_t _cmd, uint8_t* _data, uint32_t _len)
             CAN_Send(&txHeader, _data);
         }
             break;
-        case 0x25: // Get temperature
-            {
-                auto* b = (unsigned char*) &boardConfig.motor_temperature;
-                for (int i = 0; i < 4; i++)
-                    _data[i] = *(b + i);
-                _data[4] = 0;
-                _data[5] = 0;
-                _data[6] = 0;
-                _data[7] = 0;
-                txHeader.StdId = (boardConfig.canNodeId << 7) | 0x25;
-                CAN_Send(&txHeader, _data);
-            }
-            break;
+        // case 0x25: // Get temperature
+        //     {
+        //         auto* b = (unsigned char*) &boardConfig.motor_temperature;
+        //         for (int i = 0; i < 4; i++)
+        //             _data[i] = *(b + i);
+        //         _data[4] = 0;
+        //         _data[5] = 0;
+        //         _data[6] = 0;
+        //         _data[7] = 0;
+        //         txHeader.StdId = (boardConfig.canNodeId << 7) | 0x25;
+        //         CAN_Send(&txHeader, _data);
+        //     }
+        //     break;
 
         case 0x7d:  // enable motor temperature watch
             boardConfig.enableTempWatch = true;

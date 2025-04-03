@@ -3,6 +3,7 @@
 
 #include <cmath>
 
+extern Motor motor;
 
 void Motor::Tick20kHz()
 {
@@ -28,6 +29,10 @@ void Motor::AttachDriver(DriverBase* _driver)
 
 void Motor::CloseLoopControlTick()
 {
+    // controller->GetPosition();
+    // controller->GetVelocity();
+    // controller->GetAcceleration();
+    // controller->GetFocCurrent();
     /************************************ First Called ************************************/
     static bool isFirstCalled = true;
     if (isFirstCalled)// the first called, initialize variables
@@ -82,20 +87,20 @@ void Motor::CloseLoopControlTick()
     controller->estVelocityLast = controller->estVelocity;
     controller->estVelocityIntegral += (
         (controller->realPosition - controller->realPositionLast) * motionPlanner.CONTROL_FREQUENCY
-        + ((controller->estVelocity << 5) - controller->estVelocity)
+        + ((controller->estVelocity << 4) - controller->estVelocity)
     );// here it filters the velocity data, the old data has a weight of 31/32, the new data has a weight of 1/32
 
-    controller->estVelocity = controller->estVelocityIntegral >> 5;//速度的单位都是转/s
+    controller->estVelocity = controller->estVelocityIntegral >> 4;//速度的单位都是转/s
     controller->estAccelerationIntegral += (
-        (controller->estVelocity - controller->estVelocityLast) * motionPlanner.CONTROL_FREQUENCY
-        + ((controller->estAcceleration << 10) - controller->estAcceleration)
+       (int64_t) (controller->estVelocity - controller->estVelocityLast) * (int64_t)motionPlanner.CONTROL_FREQUENCY
+        + ((controller->estAcceleration << 11) - controller->estAcceleration)//11
     );
 
-    controller->estAcceleration = controller->estAccelerationIntegral >> 10;//加速度的单位都是转/s^2
+    controller->estAcceleration = controller->estAccelerationIntegral >> 11;//加速度的单位都是转/s^2
 
 
-    controller->estVelocityIntegral -= (controller->estVelocity << 5);
-    controller->estAccelerationIntegral -= (controller->estAcceleration << 10);
+    controller->estVelocityIntegral -= (controller->estVelocity << 4);
+    controller->estAccelerationIntegral -= (controller->estAcceleration << 11);
 
     // Estimate Position
     controller->estLeadPosition = Controller::CompensateAdvancedAngle(controller->estVelocity);
@@ -103,7 +108,6 @@ void Motor::CloseLoopControlTick()
 
     // Estimate Error
     controller->estError = controller->softPosition - controller->estPosition;
-
     /************************************ Ctrl Loop ************************************/
     if (controller->isStalled ||
         controller->softDisable ||
@@ -123,13 +127,16 @@ void Motor::CloseLoopControlTick()
     {
         switch (controller->modeRunning)//control the output according to the mode
         {
-            case MODE_STEP_DIR:
-                controller->CalcDceToOutput(controller->softPosition, controller->softVelocity);
-                break;
+            // case MODE_STEP_DIR:
+            //     controller->CalcDceToOutput(controller->softPosition, controller->softVelocity);
+            //     break;
             case MODE_STOP:
                 driver->Sleep();
                 break;
-            case MODE_COMMAND_Trajectory:
+            // case MODE_COMMAND_Trajectory:
+            //     controller->CalcDceToOutput(controller->softPosition, controller->softVelocity);
+            //     break;
+            case MODE_COMMAND_POSITION_TRAJECTORY:
                 controller->CalcDceToOutput(controller->softPosition, controller->softVelocity);
                 break;
             case MODE_COMMAND_CURRENT:
@@ -154,6 +161,12 @@ void Motor::CloseLoopControlTick()
                 break;
         }
     }
+
+
+    controller->focCurrentIntegral += controller->focCurrent + (controller->focCurrentLast<<1) - controller->focCurrentLast;
+    controller->focCurrentOutput = controller->focCurrentIntegral >> 1;//8
+    controller->focCurrentIntegral -= controller->focCurrentOutput <<1;
+    controller->focCurrentLast = controller->focCurrentOutput;
 
     /******************************* Mode Change Handle *******************************/
     if (controller->modeRunning != controller->requestMode)
@@ -198,8 +211,11 @@ void Motor::CloseLoopControlTick()
             case MODE_COMMAND_CURRENT:
                 motionPlanner.currentTracker.NewTask(controller->focCurrent);
                 break;
-            case MODE_COMMAND_Trajectory:
-                motionPlanner.trajectoryTracker.NewTask(controller->estPosition, controller->estVelocity);
+            // case MODE_COMMAND_Trajectory:
+            //     motionPlanner.trajectoryTracker.NewTask(controller->estPosition, controller->estVelocity, controller->estAcceleration);
+            //     break;
+            case MODE_COMMAND_POSITION_TRAJECTORY:
+                motionPlanner.positionTrajectoryTracker.NewTask(controller->estPosition, controller->estVelocity, controller->estAcceleration);
                 break;
             case MODE_PWM_POSITION:
                 motionPlanner.positionTracker.NewTask(controller->estPosition, controller->estVelocity);
@@ -210,11 +226,11 @@ void Motor::CloseLoopControlTick()
             case MODE_PWM_CURRENT:
                 motionPlanner.currentTracker.NewTask(controller->focCurrent);
                 break;
-            case MODE_STEP_DIR:
-                motionPlanner.positionInterpolator.NewTask(controller->estPosition, controller->estVelocity);
-                // step/dir mode uses delta-position, so stay where we are
-                controller->goalPosition = controller->estPosition;
-                break;
+            // case MODE_STEP_DIR:
+            //     motionPlanner.positionInterpolator.NewTask(controller->estPosition, controller->estVelocity);
+            //     // step/dir mode uses delta-position, so stay where we are
+            //     controller->goalPosition = controller->estPosition;
+            //     break;
             default:
                 break;
         }
@@ -226,7 +242,7 @@ void Motor::CloseLoopControlTick()
         case MODE_STOP:
             break;
         case MODE_COMMAND_POSITION:
-            motionPlanner.positionTracker.CalcSoftGoal(controller->goalPosition);//finished
+            motionPlanner.positionTracker.CalcSoftGoal(controller->goalPosition, controller->goalAcceleration);//finished
             controller->softPosition = motionPlanner.positionTracker.go_location;
             controller->softVelocity = motionPlanner.positionTracker.go_velocity;
             break;
@@ -238,13 +254,18 @@ void Motor::CloseLoopControlTick()
             motionPlanner.currentTracker.CalcSoftGoal(controller->goalCurrent);//finished
             controller->softCurrent = motionPlanner.currentTracker.goCurrent;
             break;
-        case MODE_COMMAND_Trajectory:
-            motionPlanner.trajectoryTracker.CalcSoftGoal(controller->goalPosition, controller->goalVelocity);
-            controller->softPosition = motionPlanner.trajectoryTracker.goPosition;
-            controller->softVelocity = motionPlanner.trajectoryTracker.goVelocity;
+        // case MODE_COMMAND_Trajectory:
+        //     motionPlanner.trajectoryTracker.CalcSoftGoal(controller->goalPosition,controller->goalVelocity, controller->goalAcceleration);
+        //     controller->softPosition = motionPlanner.trajectoryTracker.goPosition;
+        //     controller->softVelocity = motionPlanner.trajectoryTracker.goVelocity;
+        //     break;
+        case MODE_COMMAND_POSITION_TRAJECTORY:
+            motionPlanner.positionTrajectoryTracker.CalcSoftGoal(controller->goalPosition,controller->goalVelocity, controller->goalAcceleration);
+            controller->softPosition = motionPlanner.positionTrajectoryTracker.goPosition;
+            controller->softVelocity = motionPlanner.positionTrajectoryTracker.goVelocity;
             break;
         case MODE_PWM_POSITION:
-            motionPlanner.positionTracker.CalcSoftGoal(controller->goalPosition);//finished
+            motionPlanner.positionTracker.CalcSoftGoal(controller->goalPosition, controller->goalAcceleration);//finished
             controller->softPosition = motionPlanner.positionTracker.go_location;
             controller->softVelocity = motionPlanner.positionTracker.go_velocity;
             break;
@@ -256,11 +277,11 @@ void Motor::CloseLoopControlTick()
             motionPlanner.currentTracker.CalcSoftGoal(controller->goalCurrent);//finished
             controller->softCurrent = motionPlanner.currentTracker.goCurrent;
             break;
-        case MODE_STEP_DIR:
-            motionPlanner.positionInterpolator.CalcSoftGoal(controller->goalPosition);//finished
-            controller->softPosition = motionPlanner.positionInterpolator.goPosition;
-            controller->softVelocity = motionPlanner.positionInterpolator.goVelocity;
-            break;
+        // case MODE_STEP_DIR:
+        //     motionPlanner.positionInterpolator.CalcSoftGoal(controller->goalPosition);//finished
+        //     controller->softPosition = motionPlanner.positionInterpolator.go_location;
+        //     controller->softVelocity = motionPlanner.positionInterpolator.go_velocity;
+        //     break;
         default:
             break;
     }
@@ -400,7 +421,7 @@ void Motor::Controller::CalcDceToOutput(int32_t _location, int32_t _speed)
 
     config->dce.pError = _location - estPosition;
     config->dce.real_pError = config->dce.pError;
-    if(config->dce.pError <15 && config->dce.pError > -15)
+    if(config->dce.pError <10 && config->dce.pError > -10)//15
     {
         config->dce.pError = 0;
     }
@@ -409,7 +430,7 @@ void Motor::Controller::CalcDceToOutput(int32_t _location, int32_t _speed)
 
     config->dce.vError = (_speed - estVelocity) >> 7;
     config->dce.real_vError = config->dce.vError;
-    if(config->dce.vError <50 && config->dce.vError > -50)
+    if(config->dce.vError <30 && config->dce.vError > -30)//50
     {
         config->dce.vError = 0;
     }
@@ -448,10 +469,11 @@ void Motor::Controller::SetCtrlMode(Motor::Mode_t _mode)
 }
 
 
-void Motor::Controller::AddTrajectorySetPoint(int32_t _pos, int32_t _vel)
+void Motor::Controller::AddTrajectorySetPoint(int32_t _pos, int32_t _vel, int32_t _acc)
 {
     SetPositionSetPoint(_pos);
     SetVelocitySetPoint(_vel);
+    SetAccelerationSetPoint(_acc);
 }
 
 
@@ -497,6 +519,15 @@ void Motor::Controller::SetVelocitySetPoint(int32_t _vel)
     }
 }
 
+void Motor::Controller::SetAccelerationSetPoint(int32_t _acc)
+{
+    // if ((_acc >= -context->config.motionParams.ratedVelocityAcc) &&
+    //     (_acc <= context->config.motionParams.ratedVelocityAcc))
+    // {
+        goalAcceleration = _acc;
+    // }
+}
+
 
 float Motor::Controller::GetPosition(bool _isLap)
 {
@@ -508,30 +539,49 @@ float Motor::Controller::GetPosition(bool _isLap)
            (float) (context->MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS);
 }
 
-
 float Motor::Controller::GetVelocity()
 {
+    // velocity = (float) motor.motionPlanner.positionTrajectoryTracker.velocityNow / (float) context->MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS * 0.8f + (float) estVelocity / (float) context->MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS * 0.2f;
     return (float) estVelocity / (float) context->MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS;
+    return velocity;
 }
 
 float Motor::Controller::GetAcceleration()
 {
+    // acceleration =  (float) motor.motionPlanner.positionTrajectoryTracker.accelerationNow / (float) context->MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS * 0.9f + (float) estAcceleration / (float) context->MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS * 0.1f;
     return (float) estAcceleration / (float) context->MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS;
+    return acceleration;
 }
 
 float Motor::Controller::GetFocCurrent()
 {
-    return (float) focCurrent / 1000.f;
+    // current = current * 0.6f + (float) focCurrentOutput / 1000.f * 0.4f;
+    return (float) focCurrentOutput / 1000.f;
+    // return current;
 }
 
 float Motor::Controller::getGoalPosition()
 {
-    return (float) goalPosition / (float) context->MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS;
+    return (float) goalPosition/ (float) context->MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS;
 }
 
 float Motor::Controller::getGoalVelocity()
 {
     return (float) goalVelocity / (float) context->MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS;
+}
+float Motor::Controller::getGoalAcceleration()
+{
+    return (float) goalAcceleration / (float) context->MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS;
+}
+
+float Motor::Controller::getSoftPosition()
+{
+    return (float) softPosition / (float) context->MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS;
+}
+
+float Motor::Controller::getSoftVelocity()
+{
+    return (float) softVelocity / (float) context->MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS;
 }
 
 

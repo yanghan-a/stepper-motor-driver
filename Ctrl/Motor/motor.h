@@ -53,11 +53,12 @@ public:
         MODE_COMMAND_VELOCITY,
         MODE_COMMAND_CURRENT,
         MODE_COMMAND_Trajectory,
+        MODE_COMMAND_POSITION_TRAJECTORY,
         MODE_PWM_POSITION,
         MODE_PWM_VELOCITY,
-        MODE_PWM_CURRENT,
-        MODE_STEP_DIR,
-    } Mode_t;
+        MODE_PWM_CURRENT
+        // MODE_STEP_DIR,
+     } Mode_t;
 
     typedef enum
     {
@@ -126,6 +127,7 @@ public:
         void SetCtrlMode(Mode_t _mode);
         void SetCurrentSetPoint(int32_t _cur);
         void SetVelocitySetPoint(int32_t _vel);
+        void SetAccelerationSetPoint(int32_t _acc);
         void SetPositionSetPoint(int32_t _pos);
         bool SetPositionSetPointWithTime(int32_t _pos, float _time);
         float GetPosition(bool _isLap = false);
@@ -133,8 +135,11 @@ public:
         float GetAcceleration();
         float getGoalPosition();
         float getGoalVelocity();
+        float getGoalAcceleration();
+        float getSoftPosition();
+        float getSoftVelocity();
         float GetFocCurrent();
-        void AddTrajectorySetPoint(int32_t _pos, int32_t _vel);
+        void AddTrajectorySetPoint(int32_t _pos, int32_t _vel, int32_t _acc);
         void SetDisable(bool _disable);
         void SetBrake(bool _brake);
         void ApplyPosAsHomeOffset();
@@ -153,14 +158,20 @@ public:
         int32_t estLeadPosition{};
         int32_t estPosition{};
 
-        int32_t estAcceleration{};
-        int32_t estAccelerationIntegral{};
+
+        int64_t estAcceleration{};
+        int64_t estAccelerationIntegral{};
         int32_t estVelocityLast{};
 
         int32_t estError{};
         int32_t focCurrent{};
+        int32_t focCurrentIntegral{};
+        int32_t focCurrentLast{};
+        int32_t focCurrentOutput{};
+
         int32_t goalPosition{};
         int32_t goalVelocity{};
+        int32_t goalAcceleration{};
         int32_t goalCurrent{};
         bool goalDisable{};
         bool goalBrake{};
@@ -176,6 +187,9 @@ public:
         uint32_t overloadTime{};
         bool overloadFlag{};
 
+        float velocity;
+        float acceleration;
+        float current;
 
         void AttachConfig(Config_t* _config);
         void CalcCurrentToOutput(int32_t current);

@@ -1,18 +1,23 @@
 #include "common_inc.h"
 #include "configurations.h"
 
-float buffer_pos[400];
-float buffer_vel[400];
-int buffer_len = 0;
 extern Motor motor;
+uint32_t id, dce_kp,dce_kv,dce_ki,dce_kd;
+extern EncoderCalibrator encoderCalibrator;
+bool flag_conduct = false;
 
 void OnUartCmd(uint8_t* _data, uint16_t _len)
 {
     float cur, pos, vel, time;
     int ret = 0;
+    int32_t pid;
 
     switch (_data[0])
     {
+        case 's':
+            if (motor.controller->modeRunning != Motor::MODE_STOP)
+                motor.controller->SetCtrlMode(Motor::MODE_STOP);
+            break;
         case 'c':
             ret = sscanf((char*) _data, "c %f", &cur);
             if (ret < 1)
@@ -42,6 +47,7 @@ void OnUartCmd(uint8_t* _data, uint16_t _len)
             }
             break;
         case 'p':
+            flag_conduct = false;
             ret = sscanf((char*) _data, "p %f", &pos);
             if (ret < 1)
             {
@@ -55,49 +61,73 @@ void OnUartCmd(uint8_t* _data, uint16_t _len)
                     (int32_t) (pos * (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS));
             }
             break;
-        case 't':
-            ret = sscanf((char*) _data, "t %f %f", &pos, &vel);
-            if (ret < 2)
+        // case 't':
+        //     if (motor.controller->modeRunning != Motor::MODE_COMMAND_Trajectory)
+        //         motor.controller->requestMode = Motor::MODE_COMMAND_Trajectory;
+        //     flag_conduct = true;
+        //     break;
+        case 'a':
+            if (motor.controller->modeRunning != Motor::MODE_COMMAND_POSITION_TRAJECTORY)
+                motor.controller->requestMode = Motor::MODE_COMMAND_POSITION_TRAJECTORY;
+            flag_conduct = true;
+            break;
+        case 'z':
+            encoderCalibrator.isTriggered = true;
+            break;
+        case 'i':
+            id =boardConfig.canNodeId;
+            dce_kp = boardConfig.dce_kp;
+            dce_kv = boardConfig.dce_kv;
+            dce_ki = boardConfig.dce_ki;
+            dce_kd = boardConfig.dce_kd;
+            printf("CAN Node ID: %d\nkp: %d\nkv: %d\nki: %d\nkd: %d\n", id, dce_kp, dce_kv, dce_ki, dce_kd);
+            break;
+        case 'k':
+            switch (_data[1])
             {
-                printf("[error] Command format error!\r\n");
-
-            } else if (ret == 2)
-            {
-                // printf("t %.4f %.4f\r\n", pos, vel);
-                // if (motor.controller->modeRunning != Motor::MODE_COMMAND_Trajectory)
-                //     motor.controller->requestMode = Motor::MODE_COMMAND_Trajectory;
-                //
-                // motor.controller->AddTrajectorySetPoint((int32_t) (pos * (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS),
-                //        (int32_t) (vel* (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS));
-                buffer_pos[buffer_len] = pos;
-                buffer_vel[buffer_len] = vel;
-                buffer_len++;
-                if (buffer_len == sizeof(buffer_pos) / sizeof(buffer_pos[0]))
-                {
-                    buffer_len = 0;
-                }
-                break;
+                case 'p':
+                    ret = sscanf((char*) _data, "kp %d", &pid);
+                    if (ret == 1)
+                    {
+                        motor.config.ctrlParams.dce.kp = pid;
+                        boardConfig.dce_kp = pid;
+                        boardConfig.configStatus = CONFIG_COMMIT;
+                    }
+                    break;
+                case 'v':
+                    ret = sscanf((char*) _data, "kv %d", &pid);
+                    if (ret == 1)
+                    {
+                        motor.config.ctrlParams.dce.kv = pid;
+                        boardConfig.dce_kv = pid;
+                        boardConfig.configStatus = CONFIG_COMMIT;
+                    }
+                    break;
+                case 'i':
+                    ret = sscanf((char*) _data, "ki %d", &pid);
+                    if (ret == 1)
+                    {
+                        motor.config.ctrlParams.dce.ki = pid;
+                        boardConfig.dce_ki = pid;
+                        boardConfig.configStatus = CONFIG_COMMIT;
+                    }
+                    break;
+                case 'd':
+                    ret = sscanf((char*) _data, "kd %d", &pid);
+                    if (ret == 1)
+                    {
+                        motor.config.ctrlParams.dce.kd = pid;
+                        boardConfig.dce_kd = pid;
+                        boardConfig.configStatus = CONFIG_COMMIT;
+                    }
+                    break;
+                default:
+                    break;
             }
-        // case 'ratchet wheel':
-        //     ret = sscanf((char*) _data, "Ratchet wheel %f %f %f %f", &cur, &pos, &vel, &time);
-        //     if (ret < 4)
-        //     {
-        //         printf("[error] Command format error!\r\n");
-        //     } else if (ret == 4)
-        //     {
-        //         if (motor.controller->modeRunning != Motor::MODE_COMMAND_CURRENT)
-        //             motor.controller->SetCtrlMode(Motor::MODE_COMMAND_CURRENT);
-        //         motor.controller->SetCurrentSetPoint((int32_t) (cur * 1000));
-        //         motor.controller->SetPositionSetPoint(
-        //             (int32_t) (pos * (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS));
-        //         motor.controller->SetVelocitySetPoint(
-        //             (int32_t) (vel * (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS));
-        //         motor.controller->SetTimeSetPoint((int32_t) (time * 1000));
-        //     }
-        //     break;
-        // default:
-        //     printf("[error] Unknown command!\r\n");
-        //     break;
+            break;
+        default:
+            printf("[error] Unknown command!\r\n");
+            break;
     }
 }
 

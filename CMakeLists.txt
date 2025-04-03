@@ -35,6 +35,9 @@ add_compile_options(-ffunction-sections -fdata-sections -fno-common -fmessage-le
 # Enable assembler files preprocessing
 add_compile_options($<$<COMPILE_LANGUAGE:ASM>:-x$<SEMICOLON>assembler-with-cpp>)
 
+set(CMAKE_BUILD_TYPE "MinSizeRel" CACHE STRING
+        "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
+
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
     message(STATUS "Maximum optimization for speed")
     add_compile_options(-Ofast)

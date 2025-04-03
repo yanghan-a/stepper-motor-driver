@@ -38,7 +38,7 @@ void EncoderCalibratorBase::CalibrationDataCheck()
         sampleDataAverageForward[count] = (uint16_t) CycleAverage((int32_t) sampleDataAverageForward[count],
                                                                   (int32_t) sampleDataAverageBackward[count],
                                                                   motor->encoder->RESOLUTION);
-        printf("%d: %d\r\n", count, sampleDataAverageForward[count]);
+        // printf("%d: %d\r\n", count, sampleDataAverageForward[count]);
     }
     subData = CycleSubtract((int32_t) sampleDataAverageForward[0],
                             (int32_t) sampleDataAverageForward[MOTOR_ONE_CIRCLE_HARD_STEPS - 1],
