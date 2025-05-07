@@ -87,10 +87,10 @@ void Motor::CloseLoopControlTick()
     controller->estVelocityLast = controller->estVelocity;
     controller->estVelocityIntegral += (
         (controller->realPosition - controller->realPositionLast) * motionPlanner.CONTROL_FREQUENCY
-        + ((controller->estVelocity << 4) - controller->estVelocity)
+        + ((controller->estVelocity << 5) - controller->estVelocity)
     );// here it filters the velocity data, the old data has a weight of 31/32, the new data has a weight of 1/32
 
-    controller->estVelocity = controller->estVelocityIntegral >> 4;//速度的单位都是转/s
+    controller->estVelocity = controller->estVelocityIntegral >> 5;//速度的单位都是转/s
     controller->estAccelerationIntegral += (
        (int64_t) (controller->estVelocity - controller->estVelocityLast) * (int64_t)motionPlanner.CONTROL_FREQUENCY
         + ((controller->estAcceleration << 11) - controller->estAcceleration)//11
@@ -99,7 +99,7 @@ void Motor::CloseLoopControlTick()
     controller->estAcceleration = controller->estAccelerationIntegral >> 11;//加速度的单位都是转/s^2
 
 
-    controller->estVelocityIntegral -= (controller->estVelocity << 4);
+    controller->estVelocityIntegral -= (controller->estVelocity << 5);
     controller->estAccelerationIntegral -= (controller->estAcceleration << 11);
 
     // Estimate Position

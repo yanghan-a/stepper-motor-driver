@@ -95,6 +95,7 @@ public:
 
         void Init();
         void SetVelocityAcc(int32_t value);
+        float GetVelocityAcc();
         void NewTask(int32_t real_location, int32_t real_speed);
         void CalcSoftGoal(int32_t _goalPosition, int32_t _goalAcc);
 

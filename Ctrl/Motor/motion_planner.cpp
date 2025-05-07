@@ -175,6 +175,12 @@ void MotionPlanner::PositionTracker::SetVelocityAcc(int32_t value)
     velocityUpAcc = value;
     velocityDownAcc = value;
     quickVelocityDownAcc = 0.5f / (float) velocityDownAcc;
+    // quickVelocityDownAcc = 0.1f / (float) velocityDownAcc;
+}
+
+float MotionPlanner::PositionTracker::GetVelocityAcc()
+{
+    return (float)velocityUpAcc/ ((float) 256*200.0f);
 }
 
 
@@ -691,14 +697,11 @@ void MotionPlanner::PositionTrajectoryTracker::CalcSoftGoal(int32_t _goalPositio
     {
         updateTime = 0;
         recordPosition = _goalPosition;
-        accelerationNow = ((_goalPosition-positionNow)*400-velocityNow)*400;
+        accelerationNow = ((_goalPosition-positionNow)*100-velocityNow)*100;
         if (accelerationNow>40*256*200) accelerationNow = 40*256*200;
         if (accelerationNow<-40*256*200) accelerationNow = -40*256*200;
         positionNow = positionLastGoal ;
         positionLastGoal = _goalPosition;
-
-
-
         overtimeFlag = false;
     } else
     {

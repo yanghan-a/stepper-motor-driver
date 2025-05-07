@@ -11,6 +11,7 @@ void OnUartCmd(uint8_t* _data, uint16_t _len)
     float cur, pos, vel, time;
     int ret = 0;
     int32_t pid;
+    float acc_t,acc_p;
 
     switch (_data[0])
     {
@@ -69,6 +70,17 @@ void OnUartCmd(uint8_t* _data, uint16_t _len)
         case 'a':
             if (motor.controller->modeRunning != Motor::MODE_COMMAND_POSITION_TRAJECTORY)
                 motor.controller->requestMode = Motor::MODE_COMMAND_POSITION_TRAJECTORY;
+            flag_conduct = true;
+            break;
+        case 'r':
+            acc_t = motor.motionPlanner.positionTracker.GetVelocityAcc();
+            acc_p = (float)motor.config.motionParams.ratedVelocityAcc/(256*200.f);
+            printf("Acceleration: %.1f, %.1f\n", acc_t, acc_p);
+            break;
+        case 'h':
+            if (motor.controller->modeRunning != Motor::MODE_COMMAND_POSITION)
+                motor.controller->requestMode = Motor::MODE_COMMAND_POSITION;
+            motor.motionPlanner.positionTracker.SetVelocityAcc(1000*motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS);
             flag_conduct = true;
             break;
         case 'z':

@@ -69,13 +69,13 @@ void Main()
             .encoderHomeOffset = 0,
             .defaultMode = Motor::MODE_COMMAND_POSITION,
             .currentLimit = 1 * 2000,    // mA
-            .velocityLimit =30 * motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS, // r/s
+            .velocityLimit =20 * motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS, // r/s
             .velocityAcc = 100 * motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS,   // r/s^2
             .calibrationCurrent=2000,// vector of currents for calibration
-            .dce_kp = 2000,// 200,2000,关节3 800
-            .dce_kv = 120,//80,120
-            .dce_ki = 200,//300,200
-            .dce_kd = 300,//250,300
+            .dce_kp = 2000,// 200,2000,关节3 800  2000
+            .dce_kv = 120,//80,120  120
+            .dce_ki = 200,//300,200  200
+            .dce_kd = 300,//250,300  300
             .enableMotorOnBoot=false,// enable motor to the defaultMode
             .enableStallProtect=false,
             .enableTempWatch=true,
@@ -113,8 +113,8 @@ void Main()
 
     /*------- Start Close-Loop Control Tick ------*/
     HAL_Delay(100);
-    // HAL_TIM_Base_Start_IT(&htim3);  // 500Hz
-    HAL_TIM_Base_Start_IT(&htim1);  // 500Hz
+    // HAL_TIM_Base_Start_IT(&htim3);  // 100Hz
+    HAL_TIM_Base_Start_IT(&htim1);  // 100Hz
     HAL_TIM_Base_Start_IT(&htim4);  // 20kHz
 
     if (button1.IsPressed() && button2.IsPressed())
@@ -150,7 +150,8 @@ float goal_position, goal_velocity,goal_acceleration, soft_position, soft_veloci
 float foc_current_last, acceleration_last;
 float dynamic_acc;
 float delta_pos;
-
+float pos, vel, acc;
+float pos_last, vel_last, acc_last;
 /* Event Callbacks -----------------------------------------------------------*/
 extern "C" void Tim3Callback20Hz()//400Hz
 {
@@ -161,9 +162,9 @@ extern "C" void Tim3Callback20Hz()//400Hz
     velocity = motor.controller->GetVelocity();
     acceleration = motor.controller->GetAcceleration();//*0.15f+acceleration_last*0.85f;
 
-    // goal_position = motor.controller->getGoalPosition();
-    // goal_velocity = motor.controller->getGoalVelocity();
-    // goal_acceleration = motor.controller->getGoalAcceleration();
+    goal_position = motor.controller->getGoalPosition();
+    goal_velocity = motor.controller->getGoalVelocity();
+    goal_acceleration = motor.controller->getGoalAcceleration();
 
     foc_current = motor.controller->GetFocCurrent();//*0.1f+foc_current_last*0.9f;
 
@@ -176,18 +177,20 @@ extern "C" void Tim3Callback20Hz()//400Hz
     memcpy(parameters + 1 * sizeof(float), &velocity, sizeof(float));
     memcpy(parameters + 2 * sizeof(float), &acceleration, sizeof(float));
 
-    // memcpy(parameters + 3 * sizeof(float), &goal_position, sizeof(float));
-    // memcpy(parameters + 4 * sizeof(float), &goal_velocity, sizeof(float));
-    // memcpy(parameters + 5 * sizeof(float), &goal_acceleration, sizeof(float));
+    memcpy(parameters + 3 * sizeof(float), &pos_last, sizeof(float));
+    memcpy(parameters + 4 * sizeof(float), &vel_last, sizeof(float));
+    memcpy(parameters + 5 * sizeof(float), &acc_last, sizeof(float));
 
-    memcpy(parameters + 3 * sizeof(float), &foc_current, sizeof(float));
+    // memcpy(parameters + 3 * sizeof(float), &foc_current, sizeof(float));
 
-    parameters[16]=0x00;
-    parameters[17]=0x00;
-    parameters[18]=0x80;
-    parameters[19]=0x7f;
-    HAL_UART_Transmit_DMA(&huart1, (uint8_t*)parameters, 20);
-
+    parameters[24]=0x00;
+    parameters[25]=0x00;
+    parameters[26]=0x80;
+    parameters[27]=0x7f;
+    HAL_UART_Transmit_DMA(&huart1, (uint8_t*)parameters, 28);
+    pos_last = pos;
+    vel_last = vel;
+    acc_last = acc;
     // foc_current_last = foc_current;
     // acceleration_last = acceleration;
 }
@@ -195,29 +198,29 @@ extern "C" void Tim3Callback20Hz()//400Hz
 uint32_t count;
 int32_t point;
 extern bool flag_conduct;
-float freq = 500.0f;
+float freq = 100.0f;
 float dt = 1/freq;
-// float a = -6.0f;
-float period = 10.0f;//400.0f;//2000.0f;
+float period = 10.0f;
 float period_int = period*freq;
 float all_time = period_int*1;
 
 const float rad2deg = 57.295779513082320876798154814105f;
 const float wf = 0.2*3.14159265358979323846f;
 
-const float a_matrix[5] = {-0.123316804849684,	0.793963582904313,	0.00111207893058989,	-0.000288722978072079,	-0.671470134007146};
-const float b_matrix[5] = {-0.0216258783395260,	-0.341387912977113,	-0.00414640023862495,	-4.50508800798218e-06,	0.143371785072332};
-const float qi0[1] = {-0.262651393251000};
+const float a_matrix[5] = {-0.908106673278423	,-0.0713155945875227,	0.642930370800042,	0.0777617423543746,	0.258730154711529};
+const float b_matrix[5] = {0.0700511000384349,	0.214886271022423,	-0.127553263335275,	0.224472904248811,	-0.203011093814540};
+const float qi0[1] = {0.239516234276724};
 float sin_value[5];
 float cos_value[5];
-float pos, vel, acc;
+
+
 extern "C" void Tim1Callback100Hz()//400Hz
 {
     __HAL_TIM_CLEAR_IT(&htim1, TIM_IT_UPDATE);
 
-    button1.Tick(2);
-    button2.Tick(2);
-    statusLed.Tick(2, motor.controller->state);
+    button1.Tick(10);
+    button2.Tick(10);
+    statusLed.Tick(10, motor.controller->state);
 
 
     //下面是单个电机测试
@@ -233,15 +236,20 @@ extern "C" void Tim1Callback100Hz()//400Hz
                         a_matrix[4]*sin_value[4]/wf/5-b_matrix[4]*cos_value[4]/wf/5 +qi0[0];
         pos = pos*rad2deg*50/360;
 
-        // float pos = a*cos((float)point/period*2*3.14159265358979323846f)-a;
-        // float vel = -a*sin((float)point/period*2*3.14159265358979323846f)*2*3.14159265358979323846f/3.f;
-        // float acc = -a*cos((float)point/period*2*3.14159265358979323846f)*2*3.14159265358979323846f/3.f*2*3.14159265358979323846f/3.f;
-        // motor.controller->AddTrajectorySetPoint((int32_t) (pos * (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS),
-        //                    vel * (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS,
-        //                    acc * (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS);
+        vel =a_matrix[0]*cos_value[0]+b_matrix[0]*sin_value[0]+a_matrix[1]*cos_value[1]+b_matrix[1]*sin_value[1]+
+        a_matrix[2]*cos_value[2]+b_matrix[2]*sin_value[2]+a_matrix[3]*cos_value[3]+b_matrix[3]*sin_value[3]+
+            a_matrix[4]*cos_value[4]+b_matrix[4]*sin_value[4];
+        vel = vel*rad2deg*50/360;
+
+        acc = -a_matrix[0]*sin_value[0]*wf*1+b_matrix[0]*cos_value[0]*wf*1-a_matrix[1]*sin_value[1]*wf*2+b_matrix[1]*cos_value[1]*wf*2-
+        a_matrix[2]*sin_value[2]*wf*3+b_matrix[2]*cos_value[2]*wf*3-a_matrix[3]*sin_value[3]*wf*4+b_matrix[3]*cos_value[3]*wf*4-
+            a_matrix[4]*sin_value[4]*wf*5+b_matrix[4]*cos_value[4]*wf*5;
+        acc = acc*rad2deg*50/360;
+
         motor.controller->AddTrajectorySetPoint((int32_t) (pos * (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS),
                            vel* (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS,
                            acc * (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS);
+
         point ++;
     }else
     {

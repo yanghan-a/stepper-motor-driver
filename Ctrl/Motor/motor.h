@@ -15,7 +15,7 @@ public:
         config.motionParams.encoderHomeOffset = 0;
         config.motionParams.caliCurrent = 2000;             // (mA)
         config.motionParams.ratedCurrent = 1000;            // (mA)
-        config.motionParams.ratedCurrentAcc = 2 * 1000;     // (mA/s)
+        config.motionParams.ratedCurrentAcc = 4000;     // (mA/s)
         config.motionParams.ratedVelocity = 30 * MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS;
         config.motionParams.ratedVelocityAcc = 100 * MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS;
 

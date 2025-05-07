@@ -41,10 +41,25 @@ void OnCanCmd(uint8_t _cmd, uint8_t* _data, uint32_t _len)
             encoderCalibrator.isTriggered = true;
             break;
         case 0x03:  // Set Current SetPoint
+        {
             if (motor.controller->modeRunning != Motor::MODE_COMMAND_CURRENT)
                 motor.controller->SetCtrlMode(Motor::MODE_COMMAND_CURRENT);
             motor.controller->SetCurrentSetPoint((int32_t) (*(float*) RxData * 1000));
+
+            //返回位置和电流数据
+            tmpF = motor.controller->GetPosition();
+            auto* b = (unsigned char*) &tmpF;
+            for (int i = 0; i < 4; i++)
+                _data[i] = *(b + i);
+            current = motor.controller->GetFocCurrent();
+            b = (unsigned char*) &current;
+            for (int i = 0; i < 4; i++)
+                _data[i+4] = *(b + i);
+            txHeader.StdId = (boardConfig.canNodeId << 7) | 0x22;
+            CAN_Send(&txHeader, _data);
             break;
+        }
+
         case 0x04:  // Set Velocity SetPoint
             if (motor.controller->modeRunning != Motor::MODE_COMMAND_VELOCITY)
             {
@@ -289,12 +304,12 @@ void OnCanCmd(uint8_t _cmd, uint8_t* _data, uint32_t _len)
             auto* b = (unsigned char*) &acceleration;
             for (int i = 0; i < 4; i++)
                 _data[i] = *(b + i);
-                velocity = motor.controller->GetVelocity();
-                b = (unsigned char*) &velocity;
-                for (int i = 0; i < 4; i++)
-                    _data[i+4] = *(b + i);
-                txHeader.StdId = (boardConfig.canNodeId << 7) | 0x21;
-                CAN_Send(&txHeader, _data);
+            velocity = motor.controller->GetVelocity();
+            b = (unsigned char*) &velocity;
+            for (int i = 0; i < 4; i++)
+                _data[i+4] = *(b + i);
+            txHeader.StdId = (boardConfig.canNodeId << 7) | 0x21;
+            CAN_Send(&txHeader, _data);
         }
             break;
 
@@ -308,7 +323,7 @@ void OnCanCmd(uint8_t _cmd, uint8_t* _data, uint32_t _len)
                 motor.controller->AddTrajectorySetPoint(
                     (int32_t) (*(float*) RxData * (float) motor.MOTOR_ONE_CIRCLE_SUBDIVIDE_STEPS),0,
                        0);
-                //反馈位置和速度
+                //反馈位置和电流
                 tmpF = motor.controller->GetPosition();
                 auto* b = (unsigned char*) &tmpF;
                 for (int i = 0; i < 4; i++)
