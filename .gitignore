@@ -9,8 +9,7 @@ build/
 *.list
 
 # IDE / editor temp state
-.idea/shelf/
-.idea/workspace.xml
+.idea/
 .vscode/
 
 # OS junk
