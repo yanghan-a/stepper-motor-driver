@@ -1,0 +1,18 @@
+# Build output
+cmake-build-*/
+build/
+*.o
+*.elf
+*.bin
+*.hex
+*.map
+*.list
+
+# IDE / editor temp state
+.idea/shelf/
+.idea/workspace.xml
+.vscode/
+
+# OS junk
+.DS_Store
+Thumbs.db
